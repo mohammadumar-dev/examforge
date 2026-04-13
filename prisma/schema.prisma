@@ -1,0 +1,430 @@
+// ExamForge Prisma Schema
+// Generator: Prisma 7 — client output at lib/generated/prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum AdminRole {
+  super_admin
+  admin
+}
+
+enum ExamStatus {
+  draft
+  published
+  closed
+  archived
+}
+
+enum QuestionType {
+  single_choice
+  multiple_choice
+}
+
+enum AccessType {
+  public_link
+  specific_emails
+}
+
+enum SessionStatus {
+  in_progress
+  submitted
+  auto_submitted
+  expired
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  failed
+}
+
+enum NotificationRecipientType {
+  admin
+  student
+}
+
+enum AuditActorType {
+  admin
+  system
+}
+
+// ============================================================
+// ADMINS
+// ============================================================
+
+model Admin {
+  id                String    @id @default(uuid())
+  name              String    @db.VarChar(120)
+  email             String    @unique @db.VarChar(255)
+  passwordHash      String    @map("password_hash")
+  role              AdminRole @default(admin)
+  isActive          Boolean   @default(false) @map("is_active")
+  isEmailVerified   Boolean   @default(false) @map("is_email_verified")
+  createdByAdminId  String?   @map("created_by_admin_id")
+  lastLoginAt       DateTime? @map("last_login_at")
+  lastLoginIp       String?   @map("last_login_ip")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  createdByAdmin Admin?  @relation("AdminCreatedBy", fields: [createdByAdminId], references: [id])
+  createdAdmins  Admin[] @relation("AdminCreatedBy")
+
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  passwordResetHistory    PasswordResetHistory[]
+  refreshTokens           RefreshToken[]
+  examForms               ExamForm[]
+  auditLogs               AuditLog[]
+
+  @@index([email])
+  @@map("admins")
+}
+
+// ============================================================
+// EMAIL VERIFICATION TOKENS
+// ============================================================
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  adminId   String    @map("admin_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+// ============================================================
+// PASSWORD RESET TOKENS
+// ============================================================
+
+model PasswordResetToken {
+  id          String    @id @default(uuid())
+  adminId     String    @map("admin_id")
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  requestedIp String?   @map("requested_ip")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@map("password_reset_tokens")
+}
+
+// ============================================================
+// PASSWORD RESET HISTORY
+// ============================================================
+
+model PasswordResetHistory {
+  id        String   @id @default(uuid())
+  adminId   String   @map("admin_id")
+  resetIp   String?  @map("reset_ip")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_history")
+}
+
+// ============================================================
+// REFRESH TOKENS
+// ============================================================
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  adminId   String    @map("admin_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  ipAddress String?   @map("ip_address")
+  userAgent String?   @map("user_agent")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================================
+// STUDENTS
+// ============================================================
+
+model Student {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(255)
+  name      String?  @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  examSessions ExamSession[]
+
+  @@index([email])
+  @@map("students")
+}
+
+// ============================================================
+// EXAM FORMS
+// ============================================================
+
+model ExamForm {
+  id                    String     @id @default(uuid())
+  adminId               String     @map("admin_id")
+  title                 String     @db.VarChar(255)
+  slug                  String     @unique @db.VarChar(255)
+  description           String?
+  instructions          String?
+  timeLimitMinutes      Int?       @map("time_limit_minutes")
+  scheduledStartAt      DateTime?  @map("scheduled_start_at")
+  scheduledEndAt        DateTime?  @map("scheduled_end_at")
+  passingScorePercent   Int        @default(0) @map("passing_score_percent")
+  totalMarks            Decimal    @default(0) @map("total_marks") @db.Decimal(8, 2)
+  shuffleQuestions      Boolean    @default(false) @map("shuffle_questions")
+  shuffleOptions        Boolean    @default(false) @map("shuffle_options")
+  showResultImmediately Boolean    @default(true) @map("show_result_immediately")
+  allowReviewAnswers    Boolean    @default(false) @map("allow_review_answers")
+  isPublished           Boolean    @default(false) @map("is_published")
+  maxAttempts           Int        @default(1) @map("max_attempts")
+  status                ExamStatus @default(draft)
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  questions          ExamQuestion[]
+  accessRule         ExamAccessRule?
+  allowedEmails      ExamAllowedEmail[]
+  sessions           ExamSession[]
+  emailNotifications EmailNotification[]
+
+  @@index([adminId])
+  @@index([slug])
+  @@index([status])
+  @@map("exam_forms")
+}
+
+// ============================================================
+// EXAM QUESTIONS
+// ============================================================
+
+model ExamQuestion {
+  id           String       @id @default(uuid())
+  examFormId   String       @map("exam_form_id")
+  questionText String       @map("question_text")
+  questionType QuestionType @default(single_choice) @map("question_type")
+  marks        Decimal      @default(1) @db.Decimal(5, 2)
+  orderIndex   Int          @default(0) @map("order_index")
+  explanation  String?
+  isRequired   Boolean      @default(true) @map("is_required")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  examForm ExamForm @relation(fields: [examFormId], references: [id], onDelete: Cascade)
+  options  ExamQuestionOption[]
+  responses ExamResponse[]
+
+  @@unique([examFormId, orderIndex])
+  @@index([examFormId])
+  @@map("exam_questions")
+}
+
+// ============================================================
+// EXAM QUESTION OPTIONS
+// ============================================================
+
+model ExamQuestionOption {
+  id         String   @id @default(uuid())
+  questionId String   @map("question_id")
+  optionText String   @map("option_text")
+  isCorrect  Boolean  @default(false) @map("is_correct")
+  orderIndex Int      @default(0) @map("order_index")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  question        ExamQuestion          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  responseOptions ExamResponseOption[]
+
+  @@index([questionId])
+  @@map("exam_question_options")
+}
+
+// ============================================================
+// EXAM ACCESS RULES
+// ============================================================
+
+model ExamAccessRule {
+  id          String     @id @default(uuid())
+  examFormId  String     @unique @map("exam_form_id")
+  accessType  AccessType @default(specific_emails) @map("access_type")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  examForm ExamForm @relation(fields: [examFormId], references: [id], onDelete: Cascade)
+
+  @@map("exam_access_rules")
+}
+
+// ============================================================
+// EXAM ALLOWED EMAILS
+// ============================================================
+
+model ExamAllowedEmail {
+  id           String    @id @default(uuid())
+  examFormId   String    @map("exam_form_id")
+  email        String    @db.VarChar(255)
+  invitedAt    DateTime  @default(now()) @map("invited_at")
+  inviteSentAt DateTime? @map("invite_sent_at")
+
+  examForm ExamForm @relation(fields: [examFormId], references: [id], onDelete: Cascade)
+
+  @@unique([examFormId, email])
+  @@index([examFormId])
+  @@index([email])
+  @@map("exam_allowed_emails")
+}
+
+// ============================================================
+// EXAM SESSIONS
+// ============================================================
+
+model ExamSession {
+  id                  String        @id @default(uuid())
+  examFormId          String        @map("exam_form_id")
+  studentId           String        @map("student_id")
+  status              SessionStatus @default(in_progress)
+  startedAt           DateTime      @default(now()) @map("started_at")
+  submittedAt         DateTime?     @map("submitted_at")
+  timeTakenSeconds    Int?          @map("time_taken_seconds")
+  score               Decimal?      @db.Decimal(6, 2)
+  totalMarks          Decimal?      @map("total_marks") @db.Decimal(6, 2)
+  percentage          Decimal?      @db.Decimal(5, 2)
+  isPassed            Boolean?      @map("is_passed")
+  ipAddress           String?       @map("ip_address")
+  userAgent           String?       @map("user_agent")
+  tabSwitchCount      Int           @default(0) @map("tab_switch_count")
+  fullscreenExitCount Int           @default(0) @map("fullscreen_exit_count")
+  sessionToken        String        @unique @map("session_token")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  examForm  ExamForm   @relation(fields: [examFormId], references: [id])
+  student   Student    @relation(fields: [studentId], references: [id])
+  responses ExamResponse[]
+
+  @@unique([examFormId, studentId])
+  @@index([examFormId])
+  @@index([studentId])
+  @@index([status])
+  @@index([sessionToken])
+  @@map("exam_sessions")
+}
+
+// ============================================================
+// EXAM RESPONSES
+// ============================================================
+
+model ExamResponse {
+  id           String    @id @default(uuid())
+  sessionId    String    @map("session_id")
+  questionId   String    @map("question_id")
+  isSkipped    Boolean   @default(false) @map("is_skipped")
+  isCorrect    Boolean?  @map("is_correct")
+  marksAwarded Decimal?  @map("marks_awarded") @db.Decimal(5, 2)
+  answeredAt   DateTime  @default(now()) @map("answered_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  session         ExamSession          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question        ExamQuestion         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptions ExamResponseOption[]
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+  @@map("exam_responses")
+}
+
+// ============================================================
+// EXAM RESPONSE OPTIONS
+// ============================================================
+
+model ExamResponseOption {
+  id         String @id @default(uuid())
+  responseId String @map("response_id")
+  optionId   String @map("option_id")
+
+  response ExamResponse       @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  option   ExamQuestionOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, optionId])
+  @@index([responseId])
+  @@map("exam_response_options")
+}
+
+// ============================================================
+// EMAIL NOTIFICATIONS
+// ============================================================
+
+model EmailNotification {
+  id               String                    @id @default(uuid())
+  recipientType    NotificationRecipientType @map("recipient_type")
+  recipientId      String                    @map("recipient_id")
+  recipientEmail   String                    @map("recipient_email") @db.VarChar(255)
+  notificationType String                    @map("notification_type") @db.VarChar(50)
+  subject          String
+  bodyHtml         String?                   @map("body_html")
+  status           NotificationStatus        @default(pending)
+  attempts         Int                       @default(0)
+  sentAt           DateTime?                 @map("sent_at")
+  failedReason     String?                   @map("failed_reason")
+  relatedExamId    String?                   @map("related_exam_id")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+
+  // recipientId is a polymorphic reference — FK enforced at app layer
+  examForm ExamForm? @relation(fields: [relatedExamId], references: [id], onDelete: SetNull)
+
+  @@index([recipientType, recipientId])
+  @@index([status])
+  @@index([relatedExamId])
+  @@map("email_notifications")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id         String         @id @default(uuid())
+  actorType  AuditActorType @map("actor_type")
+  actorId    String?        @map("actor_id")
+  action     String         @db.VarChar(100)
+  targetType String?        @map("target_type") @db.VarChar(50)
+  targetId   String?        @map("target_id")
+  metadata   Json?
+  ipAddress  String?        @map("ip_address")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  admin Admin? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorType, actorId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
