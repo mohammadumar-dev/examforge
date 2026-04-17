@@ -8,7 +8,7 @@ import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
-  const { success } = rateLimit(`forgot:${ip}`, 5, 15 * 60 * 1000);
+  const { success } = await rateLimit(`forgot:${ip}`, 5, 15 * 60 * 1000);
   if (!success) {
     return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
   }

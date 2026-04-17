@@ -12,7 +12,7 @@ const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 export async function POST(req: NextRequest) {
   // Rate limit: 10 attempts per 15 minutes per IP
   const ip = getClientIp(req);
-  const { success } = rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
+  const { success } = await rateLimit(`login:${ip}`, 10, 15 * 60 * 1000);
   if (!success) {
     return NextResponse.json(
       { error: "Too many login attempts. Try again in 15 minutes." },
