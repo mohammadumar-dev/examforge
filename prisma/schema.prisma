@@ -9,9 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================================
@@ -175,15 +174,20 @@ model RefreshToken {
 // ============================================================
 
 model Student {
-  id        String   @id @default(uuid())
-  email     String   @unique @db.VarChar(255)
-  name      String?  @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  email          String   @unique @db.VarChar(255)
+  name           String?  @db.VarChar(120)
+  mobileNumber   String?  @map("mobile_number") @db.VarChar(20)
+  whatsappNumber String?  @map("whatsapp_number") @db.VarChar(20)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   examSessions ExamSession[]
+  enrollments  ExamEnrollment[]
 
   @@index([email])
+  @@index([mobileNumber])
+  @@index([whatsappNumber])
   @@map("students")
 }
 
@@ -218,8 +222,10 @@ model ExamForm {
   questions          ExamQuestion[]
   accessRule         ExamAccessRule?
   allowedEmails      ExamAllowedEmail[]
+  enrollments        ExamEnrollment[]
   sessions           ExamSession[]
   emailNotifications EmailNotification[]
+  whatsappNotifications WhatsAppNotification[]
 
   @@index([adminId])
   @@index([slug])
@@ -307,6 +313,32 @@ model ExamAllowedEmail {
 }
 
 // ============================================================
+// EXAM ENROLLMENTS
+// ============================================================
+
+model ExamEnrollment {
+  id                       String    @id @default(uuid())
+  examFormId               String    @map("exam_form_id")
+  studentId                String    @map("student_id")
+  mobileNumber             String    @map("mobile_number") @db.VarChar(20)
+  whatsappNumber           String    @map("whatsapp_number") @db.VarChar(20)
+  passwordHash             String    @map("password_hash")
+  examInfoWhatsappSentAt   DateTime? @map("exam_info_whatsapp_sent_at")
+  examResultWhatsappSentAt DateTime? @map("exam_result_whatsapp_sent_at")
+  registeredAt             DateTime  @default(now()) @map("registered_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  examForm ExamForm @relation(fields: [examFormId], references: [id], onDelete: Cascade)
+  student  Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([examFormId, studentId])
+  @@index([examFormId])
+  @@index([studentId])
+  @@index([whatsappNumber])
+  @@map("exam_enrollments")
+}
+
+// ============================================================
 // EXAM SESSIONS
 // ============================================================
 
@@ -327,6 +359,7 @@ model ExamSession {
   tabSwitchCount      Int           @default(0) @map("tab_switch_count")
   fullscreenExitCount Int           @default(0) @map("fullscreen_exit_count")
   sessionToken        String        @unique @map("session_token")
+  resultShareToken    String?       @unique @map("result_share_token")
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")
 
@@ -339,7 +372,37 @@ model ExamSession {
   @@index([studentId])
   @@index([status])
   @@index([sessionToken])
+  @@index([examFormId, studentId, status])
   @@map("exam_sessions")
+}
+
+// ============================================================
+// WHATSAPP NOTIFICATIONS
+// ============================================================
+
+model WhatsAppNotification {
+  id               String                    @id @default(uuid())
+  recipientType    NotificationRecipientType @map("recipient_type")
+  recipientId      String                    @map("recipient_id")
+  recipientPhone   String                    @map("recipient_phone") @db.VarChar(20)
+  notificationType String                    @map("notification_type") @db.VarChar(50)
+  messageBody      String                    @map("message_body")
+  mediaUrl         String?                   @map("media_url")
+  status           NotificationStatus        @default(pending)
+  attempts         Int                       @default(0)
+  providerMessageId String?                  @map("provider_message_id")
+  sentAt           DateTime?                 @map("sent_at")
+  failedReason     String?                   @map("failed_reason")
+  relatedExamId    String?                   @map("related_exam_id")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+
+  examForm ExamForm? @relation(fields: [relatedExamId], references: [id], onDelete: SetNull)
+
+  @@index([recipientType, recipientId])
+  @@index([recipientPhone])
+  @@index([status])
+  @@index([relatedExamId])
+  @@map("whatsapp_notifications")
 }
 
 // ============================================================
