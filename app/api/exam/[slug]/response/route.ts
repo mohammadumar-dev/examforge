@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withExamSession } from "@/lib/withExamSession";
+import { cacheWrap } from "@/lib/redis";
+import { CacheKeys } from "@/lib/cacheKeys";
 import { saveResponseSchema } from "@/lib/validators/examTakingSchemas";
 import { z } from "zod";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
@@ -15,19 +20,29 @@ export function POST(req: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ error: "Invalid input", details: err }, { status: 400 });
     }
 
-    // Verify question belongs to this exam
-    const question = await prisma.examQuestion.findFirst({
-      where: { id: body.questionId, examFormId: session.examFormId },
-    });
+    // Use cached question bank to verify question belongs to this exam (avoids per-save DB read)
+    const questions = await cacheWrap(CacheKeys.questions(session.examFormId), 300, () =>
+      prisma.examQuestion.findMany({
+        where: { examFormId: session.examFormId },
+        orderBy: { orderIndex: "asc" },
+        include: {
+          options: { orderBy: { orderIndex: "asc" }, select: { id: true, optionText: true, orderIndex: true } },
+        },
+      })
+    );
+
+    const question = questions.find((q) => q.id === body.questionId);
     if (!question) {
       return NextResponse.json({ error: "Question not found" }, { status: 404 });
     }
 
-    // Check time hasn't expired
-    const exam = await prisma.examForm.findUnique({
-      where: { id: session.examFormId },
-      select: { timeLimitMinutes: true },
-    });
+    // Use cached exam config to check time limit
+    const exam = await cacheWrap(CacheKeys.examById(session.examFormId), 300, () =>
+      prisma.examForm.findUnique({
+        where: { id: session.examFormId },
+        select: { timeLimitMinutes: true },
+      })
+    );
     if (exam?.timeLimitMinutes) {
       const elapsed = (Date.now() - session.startedAt.getTime()) / 1000 / 60;
       if (elapsed >= exam.timeLimitMinutes) {
@@ -50,16 +65,14 @@ export function POST(req: NextRequest, ctx: RouteContext) {
     await prisma.examResponseOption.deleteMany({ where: { responseId: response.id } });
 
     if (!body.isSkipped && body.optionIds.length > 0) {
-      // Verify options belong to this question
-      const validOptions = await prisma.examQuestionOption.findMany({
-        where: { id: { in: body.optionIds }, questionId: body.questionId },
-        select: { id: true },
-      });
-      const validIds = validOptions.map((o: { id: string }) => o.id);
+      // Validate option IDs against cached question options
+      const validIds = question.options
+        .filter((o) => body.optionIds.includes(o.id))
+        .map((o) => o.id);
 
       if (validIds.length > 0) {
         await prisma.examResponseOption.createMany({
-          data: validIds.map((optionId: string) => ({ responseId: response.id, optionId })),
+          data: validIds.map((optionId) => ({ responseId: response.id, optionId })),
           skipDuplicates: true,
         });
       }
