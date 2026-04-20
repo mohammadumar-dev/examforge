@@ -66,5 +66,5 @@ export default async function ExamEntryPage({ params, searchParams }: Props) {
     );
   }
 
-  return <ExamEntry exam={exam} prefillEmail={email} prefillPassword={pwd} />;
+  return <ExamEntry exam={{ ...exam, totalMarks: Number(exam.totalMarks) }} prefillEmail={email} prefillPassword={pwd} />;
 }
