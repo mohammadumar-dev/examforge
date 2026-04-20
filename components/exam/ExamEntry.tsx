@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -32,26 +32,40 @@ interface ExamInfo {
 
 interface ExamEntryProps {
   exam: ExamInfo;
+  prefillEmail?: string;
+  prefillPassword?: string;
 }
 
-export function ExamEntry({ exam }: ExamEntryProps) {
+export function ExamEntry({ exam, prefillEmail, prefillPassword }: ExamEntryProps) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(prefillEmail ?? "");
+  const [password, setPassword] = useState(prefillPassword ?? "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const autoSubmitted = useRef(false);
 
-  async function handleStart(e: React.FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    if (prefillEmail && prefillPassword && !autoSubmitted.current) {
+      autoSubmitted.current = true;
+      handleStart();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleStart(e?: React.FormEvent) {
+    e?.preventDefault();
     setError("");
     setLoading(true);
+
+    const emailVal = e ? email : (prefillEmail ?? email);
+    const pwdVal   = e ? password : (prefillPassword ?? password);
 
     try {
       const res = await fetch(`/api/exam/${exam.slug}/verify-access`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.toLowerCase(), password }),
+        body: JSON.stringify({ email: emailVal.toLowerCase(), password: pwdVal }),
       });
 
       const data = await res.json();
@@ -128,47 +142,57 @@ export function ExamEntry({ exam }: ExamEntryProps) {
 
         {/* Form */}
         <form onSubmit={handleStart} className="p-6 space-y-5">
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-sm font-medium">
-              Email Address
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Use the same email you used during enrollment.
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-sm font-medium">
-              Exam Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password received on WhatsApp"
-                required
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
+          {/* Auto-sign-in state — shown when arriving via WhatsApp magic link */}
+          {prefillEmail && prefillPassword && loading && !error ? (
+            <div className="flex flex-col items-center gap-3 py-4 text-muted-foreground">
+              <Loader2 size={24} className="animate-spin text-primary" />
+              <p className="text-sm">Signing you in…</p>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Use the same email you used during enrollment.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-sm font-medium">
+                  Exam Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password received on WhatsApp"
+                    required
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           {error && (
             <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/8 border border-destructive/20 px-3 py-2.5 rounded-lg">
@@ -177,16 +201,18 @@ export function ExamEntry({ exam }: ExamEntryProps) {
             </div>
           )}
 
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 size={15} className="animate-spin" />
-                Verifying…
-              </>
-            ) : (
-              "Start Exam"
-            )}
-          </Button>
+          {!(prefillEmail && prefillPassword && loading && !error) && (
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Verifying…
+                </>
+              ) : (
+                "Start Exam"
+              )}
+            </Button>
+          )}
         </form>
 
         {/* Footer */}

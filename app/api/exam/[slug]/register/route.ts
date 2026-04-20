@@ -4,7 +4,8 @@ import { examRegistrationSchema } from "@/lib/validators/examTakingSchemas";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { cacheWrap } from "@/lib/redis";
 import { CacheKeys } from "@/lib/cacheKeys";
-import { examInfoWhatsappMessage, queueWhatsapp } from "@/lib/whatsapp";
+import { queueWhatsapp } from "@/lib/whatsapp";
+import { buildExamRegistrationTemplate } from "@/lib/whatsapp-templates";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { z } from "zod";
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   });
 
   const examPassword = crypto.randomBytes(4).toString("hex").toUpperCase();
-  const passwordHash = await bcrypt.hash(examPassword, 12);
+  const passwordHash = await bcrypt.hash(examPassword, 10);
 
   const enrollment = await prisma.examEnrollment.upsert({
     where: { examFormId_studentId: { examFormId: exam.id, studentId: student.id } },
@@ -94,34 +95,22 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     },
   });
 
-  let whatsappSent = false;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin;
-  const examUrl = `${appUrl}/exam/${exam.slug}`;
-  const bodyText = examInfoWhatsappMessage({
+  const { body: msgBody, templateVariables } = buildExamRegistrationTemplate({
     studentName: body.name,
     examTitle: exam.title,
-    examUrl,
+    examSlug: exam.slug,
+    studentEmail: email,
     examPassword,
-    startAt: exam.scheduledStartAt,
-    endAt: exam.scheduledEndAt,
+    scheduledStartAt: exam.scheduledStartAt,
     timeLimitMinutes: exam.timeLimitMinutes,
-    instructions: exam.instructions,
   });
 
-  whatsappSent = await queueWhatsapp({
+  const whatsappSent = await queueWhatsapp({
     to: body.whatsappNumber,
     contactName: body.name,
     campaignName: process.env.SANDESHAI_EXAM_INFO_CAMPAIGN_NAME ?? "Exam Enrollment",
-    body: bodyText,
-    templateVariables: [
-      body.name,
-      exam.title,
-      examUrl,
-      examPassword,
-      exam.scheduledStartAt ? new Date(exam.scheduledStartAt).toLocaleString("en-IN") : "As per schedule",
-      exam.scheduledEndAt ? new Date(exam.scheduledEndAt).toLocaleString("en-IN") : "As per schedule",
-      exam.timeLimitMinutes ? `${exam.timeLimitMinutes} minutes` : "No time limit",
-    ],
+    body: msgBody,
+    templateVariables,
     attributes: {
       Source: "ExamForge",
       Exam: exam.title,
@@ -144,6 +133,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     registered: true,
     enrollmentId: enrollment.id,
     studentId: student.id,
+    examPassword,
     whatsappSent,
   });
 }

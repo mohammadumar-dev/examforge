@@ -2,10 +2,12 @@ import { ExamEntry } from "@/components/exam/ExamEntry";
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ email?: string; pwd?: string }>;
 }
 
-export default async function ExamEntryPage({ params }: Props) {
+export default async function ExamEntryPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { email, pwd } = await searchParams;
 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/exam/${slug}`,
@@ -30,5 +32,5 @@ export default async function ExamEntryPage({ params }: Props) {
   }
 
   const { exam } = await res.json();
-  return <ExamEntry exam={exam} />;
+  return <ExamEntry exam={exam} prefillEmail={email} prefillPassword={pwd} />;
 }

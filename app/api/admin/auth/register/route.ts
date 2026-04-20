@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/withAdminAuth";
 import { generateToken, hashToken } from "@/lib/auth";
-import { queueEmail } from "@/lib/mailer";
-import { verificationEmail } from "@/lib/email-templates";
 import { registerAdminSchema } from "@/lib/validators/adminAuthSchemas";
 import { z } from "zod";
 
-export const POST = withAdminAuth(async (req, { adminId }) => {
+export const POST = withAdminAuth(async (req: NextRequest, { adminId }: { adminId: string }) => {
   let body: z.infer<typeof registerAdminSchema>;
   try {
     body = registerAdminSchema.parse(await req.json());
@@ -20,7 +18,6 @@ export const POST = withAdminAuth(async (req, { adminId }) => {
     return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   }
 
-  // Create admin with a random temporary password — must reset via email verification
   const tempPassword = generateToken(16);
   const { hashSync } = await import("bcryptjs");
   const passwordHash = hashSync(tempPassword, 12);
@@ -31,33 +28,25 @@ export const POST = withAdminAuth(async (req, { adminId }) => {
       email: body.email,
       passwordHash,
       role: "admin",
-      isActive: false,
-      isEmailVerified: false,
+      isActive: true,
+      isEmailVerified: true,
       createdByAdminId: adminId,
     },
     select: { id: true, name: true, email: true, role: true, createdAt: true },
   });
 
-  // Create email verification token
+  // Create a password reset token so the new admin can set their own password
   const rawToken = generateToken();
   const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
-  await prisma.emailVerificationToken.create({
+  await prisma.passwordResetToken.create({
     data: { adminId: newAdmin.id, tokenHash, expiresAt },
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const verifyLink = `${appUrl}/admin/verify-email?token=${rawToken}`;
+  const setupLink = `${appUrl}/admin/reset-password?token=${rawToken}`;
 
-  await queueEmail({
-    to: newAdmin.email,
-    subject: "Verify your ExamForge account",
-    html: verificationEmail(newAdmin.name, verifyLink),
-    recipientType: "admin",
-    recipientId: newAdmin.id,
-    notificationType: "admin_email_verification",
-  });
-
-  return NextResponse.json({ admin: newAdmin }, { status: 201 });
+  // Email is disabled — return the setup link directly for the caller to share
+  return NextResponse.json({ admin: newAdmin, setupLink }, { status: 201 });
 });
