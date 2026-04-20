@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
+import { CacheKeys } from "@/lib/cacheKeys";
 
 type RouteContext = { params: Promise<{ slug: string; sessionId: string }> };
 
@@ -47,6 +49,17 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Exam not yet submitted" }, { status: 400 });
   }
 
+  // Check if background scoring is still in progress
+  let scoringPending = session.score === null;
+  if (scoringPending && redis) {
+    const marker = await redis.get(CacheKeys.scoringPending(sessionId)).catch(() => null);
+    scoringPending = marker !== null;
+  }
+
+  if (scoringPending) {
+    return NextResponse.json({ scorePending: true });
+  }
+
   if (!exam.showResultImmediately) {
     return NextResponse.json({
       submitted: true,
@@ -64,6 +77,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
       isPassed: session.isPassed,
       timeTakenSeconds: session.timeTakenSeconds,
       submittedAt: session.submittedAt,
+      resultShareToken: session.resultShareToken,
       student: session.student,
       responses: (session as typeof session & { responses?: unknown[] }).responses ?? undefined,
     },

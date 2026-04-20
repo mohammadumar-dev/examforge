@@ -1,8 +1,9 @@
 "use client";
 
-import { CheckCircle, XCircle, Clock, Trophy, Target, Lightbulb, Check } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Trophy, Target, Lightbulb, Check, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-interface ResultData {
+export interface ResultData {
   sessionId: string;
   status: string;
   score: number;
@@ -11,6 +12,7 @@ interface ResultData {
   isPassed: boolean;
   timeTakenSeconds: number | null;
   submittedAt: string;
+  resultShareToken?: string | null;
   student: { email: string; name: string | null };
   responses?: ResponseData[];
 }
@@ -28,7 +30,10 @@ interface ResponseData {
   selectedOptions: { option: { id: string; optionText: string; isCorrect: boolean } }[];
 }
 
-export function ResultCard({ result, examTitle }: { result: ResultData; examTitle?: string }) {
+export function ResultCard({ result, examTitle, slug, pdfToken }: { result: ResultData; examTitle?: string; slug?: string; pdfToken?: string }) {
+  const pdfUrl = slug && pdfToken
+    ? `/api/exam/${slug}/result/${result.sessionId}/pdf?token=${pdfToken}`
+    : null;
   const minutes = result.timeTakenSeconds ? Math.floor(result.timeTakenSeconds / 60) : 0;
   const seconds = result.timeTakenSeconds ? result.timeTakenSeconds % 60 : 0;
 
@@ -92,6 +97,18 @@ export function ResultCard({ result, examTitle }: { result: ResultData; examTitl
               {result.isPassed ? "PASSED" : "FAILED"}
             </span>
           </div>
+
+          {/* Download PDF */}
+          {pdfUrl && (
+            <div>
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <a href={pdfUrl} download>
+                  <Download size={14} />
+                  Download Result PDF
+                </a>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

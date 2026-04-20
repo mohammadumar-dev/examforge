@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useParams, useRouter } from "next/navigation";
-import { ResultCard } from "@/components/exam/ResultCard";
+import { ResultCard, type ResultData } from "@/components/exam/ResultCard";
 import { Loader2, FileX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +13,9 @@ function ResultContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session");
 
-  const [result, setResult] = useState(null);
+  const token = searchParams.get("token");
+
+  const [result, setResult] = useState<ResultData | null>(null);
   const [examTitle, setExamTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -75,7 +77,7 @@ function ResultContent() {
 
   if (!result) return null;
 
-  return <ResultCard result={result} examTitle={examTitle} />;
+  return <ResultCard result={result} examTitle={examTitle} slug={slug} pdfToken={result.resultShareToken ?? token ?? undefined} />;
 }
 
 export default function ResultPage() {

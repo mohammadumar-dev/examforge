@@ -77,6 +77,11 @@ async function sendWhatsappMessage(opts: QueueWhatsappOptions) {
 
 /** Queue a WhatsApp notification and attempt delivery immediately. */
 export async function queueWhatsapp(opts: QueueWhatsappOptions): Promise<boolean> {
+  // Early-exit when disabled — skip all DB writes, no-op for load testing
+  if (process.env.WHATSAPP_ENABLED !== "true") {
+    return false;
+  }
+
   console.log("[whatsapp] queueWhatsapp called for", opts.to, "campaign:", opts.campaignName);
 
   let notification: { id: string } | null = null;
@@ -155,6 +160,7 @@ export function examResultWhatsappMessage(args: {
   totalMarks: number;
   percentage: number;
   isPassed: boolean;
+  resultUrl: string;
 }) {
   return [
     `Hello ${args.studentName},`,
@@ -162,6 +168,6 @@ export function examResultWhatsappMessage(args: {
     `Score: ${args.score} / ${args.totalMarks}`,
     `Percentage: ${args.percentage.toFixed(1)}%`,
     `Status: ${args.isPassed ? "PASSED" : "FAILED"}`,
-    "The PDF result document is attached.",
+    `View result: ${args.resultUrl}`,
   ].join("\n");
 }
