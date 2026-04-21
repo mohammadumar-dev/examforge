@@ -23,7 +23,8 @@ ENV NODE_ENV=production
 ENV JWT_ACCESS_SECRET=build_placeholder_min32charsxxxxxxxxxxx
 ENV JWT_REFRESH_SECRET=build_placeholder_min32charsxxxxxxxxxxx
 ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
-ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 RUN npm run build
 
 # ── Stage 3: Production runner ────────────────────────────────────────────────
