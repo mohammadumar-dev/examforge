@@ -1,6 +1,8 @@
 import { ExamEntry } from "@/components/exam/ExamEntry";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ email?: string; pwd?: string }>;
