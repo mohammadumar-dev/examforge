@@ -149,10 +149,11 @@ export function ResultCard({ result, examTitle, slug, pdfToken }: { result: Resu
                 <p className="text-xs text-muted-foreground italic">Skipped</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {r.question.options.map((opt) => {
+                  {r.question.options.map((opt, optIdx) => {
                     const wasSelected = r.selectedOptions.some((s) => s.option.id === opt.id);
                     const isCorrect = opt.isCorrect;
                     const isWrongSelected = wasSelected && !isCorrect;
+                    const label = String.fromCharCode(65 + optIdx); // A, B, C, D …
 
                     return (
                       <span
@@ -165,6 +166,7 @@ export function ResultCard({ result, examTitle, slug, pdfToken }: { result: Resu
                             : "bg-muted text-muted-foreground border-transparent"
                         }`}
                       >
+                        <span className="font-bold">{label}.</span>
                         {wasSelected && <Check size={10} strokeWidth={3} />}
                         {opt.optionText}
                         {isCorrect && (

@@ -109,9 +109,10 @@ export function QuestionCard({
 
         {/* Options */}
         <div className="space-y-3">
-          {question.options.map((option) => {
+          {question.options.map((option, index) => {
             const isSelected = selected.includes(option.id);
             const isRadio = question.questionType === "single_choice";
+            const label = String.fromCharCode(65 + index); // A, B, C, D …
 
             return (
               <button
@@ -123,15 +124,15 @@ export function QuestionCard({
                     : "border-border bg-background hover:border-primary/40 hover:bg-primary/5"
                 }`}
               >
-                {/* Indicator */}
+                {/* Option letter label */}
                 <div
-                  className={`w-5 h-5 ${isRadio ? "rounded-full" : "rounded-md"} border-2 flex items-center justify-center shrink-0 transition-all ${
+                  className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center shrink-0 text-xs font-bold transition-all ${
                     isSelected
                       ? "border-primary bg-primary text-primary-foreground"
-                      : "border-input bg-background"
+                      : "border-input bg-muted text-muted-foreground"
                   }`}
                 >
-                  {isSelected && <Check size={11} strokeWidth={3} />}
+                  {isSelected ? <Check size={11} strokeWidth={3} /> : label}
                 </div>
                 <span className="text-sm leading-relaxed">{option.optionText}</span>
               </button>
