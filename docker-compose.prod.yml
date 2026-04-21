@@ -1,0 +1,129 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ef_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       examforge
+      POSTGRES_USER:     examforge_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ef_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U examforge_user -d examforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    command: >
+      postgres
+        -c max_connections=100
+        -c shared_buffers=256MB
+        -c effective_cache_size=2GB
+        -c work_mem=4MB
+        -c maintenance_work_mem=128MB
+        -c checkpoint_completion_target=0.9
+        -c wal_buffers=16MB
+        -c max_wal_size=512MB
+        -c random_page_cost=1.1
+
+  # ── PgBouncer ───────────────────────────────────────────────────────────────
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: ef_pgbouncer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL:              postgres://examforge_user:${POSTGRES_PASSWORD}@postgres:5432/examforge
+      POOL_MODE:                 transaction
+      MAX_CLIENT_CONN:           "500"
+      DEFAULT_POOL_SIZE:         "40"
+      RESERVE_POOL_SIZE:         "10"
+      RESERVE_POOL_TIMEOUT:      "3"
+      SERVER_IDLE_TIMEOUT:       "30"
+      IGNORE_STARTUP_PARAMETERS: extra_float_digits,options
+      QUERY_WAIT_TIMEOUT:        "10"
+      AUTH_TYPE:                 plain
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ef_redis
+    restart: unless-stopped
+    volumes:
+      - ef_redis_data:/data
+    command: >
+      redis-server
+        --maxmemory 200mb
+        --maxmemory-policy allkeys-lru
+        --save 900 1
+        --save 300 10
+        --appendonly yes
+        --appendfsync everysec
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Next.js App ─────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ef_app
+    restart: unless-stopped
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      # Bind only to localhost — Nginx on the host proxies to this
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      # App queries go through PgBouncer (transaction mode pooling)
+      DATABASE_URL: postgresql://examforge_user:${POSTGRES_PASSWORD}@pgbouncer:5432/examforge
+      # Both DIRECT_URL (read by Prisma schema) and DIRECT_DATABASE_URL (read by
+      # entrypoint.sh) point to Postgres directly, bypassing PgBouncer for migrations.
+      DIRECT_URL: postgresql://examforge_user:${POSTGRES_PASSWORD}@postgres:5432/examforge
+      DIRECT_DATABASE_URL: postgresql://examforge_user:${POSTGRES_PASSWORD}@postgres:5432/examforge
+      REDIS_URL: redis://redis:6379
+      REDIS_ENABLED: "true"
+    deploy:
+      resources:
+        limits:
+          memory: 1500m
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+
+volumes:
+  ef_pgdata:
+  ef_redis_data:
