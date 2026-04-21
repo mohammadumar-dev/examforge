@@ -9,7 +9,7 @@ export function PATCH(req: NextRequest, ctx: RouteContext) {
     const id = params?.id;
     if (!id) return NextResponse.json({ error: "Missing exam id" }, { status: 400 });
 
-    const exam = await prisma.examForm.findFirst({ where: { id, adminId } });
+    const exam = await prisma.examForm.findFirst({ where: { id } });
     if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
     if (exam.status === "archived") {

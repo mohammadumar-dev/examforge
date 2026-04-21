@@ -13,7 +13,7 @@ export function GET(req: NextRequest, ctx: RouteContext) {
     if (!id) return NextResponse.json({ error: "Missing exam id" }, { status: 400 });
 
     const exam = await prisma.examForm.findFirst({
-      where: { id, adminId },
+      where: { id },
       include: {
         questions: {
           orderBy: { orderIndex: "asc" },
@@ -42,7 +42,7 @@ export function PATCH(req: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ error: "Invalid input", details: err }, { status: 400 });
     }
 
-    const exam = await prisma.examForm.findFirst({ where: { id, adminId } });
+    const exam = await prisma.examForm.findFirst({ where: { id } });
     if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
     const updated = await prisma.examForm.update({
@@ -64,7 +64,7 @@ export function DELETE(req: NextRequest, ctx: RouteContext) {
     const id = params?.id;
     if (!id) return NextResponse.json({ error: "Missing exam id" }, { status: 400 });
 
-    const exam = await prisma.examForm.findFirst({ where: { id, adminId } });
+    const exam = await prisma.examForm.findFirst({ where: { id } });
     if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
     // Soft delete — archive

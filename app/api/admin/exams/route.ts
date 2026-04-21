@@ -6,7 +6,7 @@ import { generateSlug } from "@/lib/slugify";
 import { writeAuditLog } from "@/lib/audit";
 import { z } from "zod";
 
-export const GET = withAdminAuth(async (req, { adminId }) => {
+export const GET = withAdminAuth(async (req) => {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Number(searchParams.get("page") ?? 1));
   const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 20)));
@@ -14,7 +14,6 @@ export const GET = withAdminAuth(async (req, { adminId }) => {
 
   const [exams, total] = await prisma.$transaction([
     prisma.examForm.findMany({
-      where: { adminId },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
@@ -33,7 +32,7 @@ export const GET = withAdminAuth(async (req, { adminId }) => {
         _count: { select: { questions: true, sessions: true } },
       },
     }),
-    prisma.examForm.count({ where: { adminId } }),
+    prisma.examForm.count(),
   ]);
 
   return NextResponse.json({ exams, total, page, limit });

@@ -12,7 +12,7 @@ export function GET(req: NextRequest, ctx: RouteContext) {
     const examId = params?.id;
     if (!examId) return NextResponse.json({ error: "Missing exam id" }, { status: 400 });
 
-    const exam = await prisma.examForm.findFirst({ where: { id: examId, adminId } });
+    const exam = await prisma.examForm.findFirst({ where: { id: examId } });
     if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
     const questions = await prisma.examQuestion.findMany({
@@ -30,7 +30,7 @@ export function POST(req: NextRequest, ctx: RouteContext) {
     const examId = params?.id;
     if (!examId) return NextResponse.json({ error: "Missing exam id" }, { status: 400 });
 
-    const exam = await prisma.examForm.findFirst({ where: { id: examId, adminId } });
+    const exam = await prisma.examForm.findFirst({ where: { id: examId } });
     if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
     let body: z.infer<typeof createQuestionSchema>;
