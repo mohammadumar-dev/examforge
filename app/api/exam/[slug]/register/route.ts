@@ -75,6 +75,35 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     },
   });
 
+  // Block if the same mobile or WhatsApp number already submitted this exam
+  const phoneFilters: ({ mobileNumber: string } | { whatsappNumber: string })[] = [];
+  if (body.mobileNumber) phoneFilters.push({ mobileNumber: body.mobileNumber });
+  if (body.whatsappNumber) phoneFilters.push({ whatsappNumber: body.whatsappNumber });
+
+  if (phoneFilters.length > 0) {
+    const duplicate = await prisma.examEnrollment.findFirst({
+      where: {
+        examFormId: exam.id,
+        studentId: { not: student.id },
+        OR: phoneFilters,
+        student: {
+          examSessions: {
+            some: {
+              examFormId: exam.id,
+              status: { in: ["submitted", "auto_submitted"] },
+            },
+          },
+        },
+      },
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        { error: "This mobile number has already been used to submit this exam" },
+        { status: 409 }
+      );
+    }
+  }
+
   const examPassword = crypto.randomBytes(4).toString("hex").toUpperCase();
   const passwordHash = await bcrypt.hash(examPassword, 10);
 

@@ -92,6 +92,35 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Invalid email or exam password" }, { status: 401 });
   }
 
+  // Block if same mobile/WhatsApp already submitted via a different student account
+  const phoneFilters: ({ mobileNumber: string } | { whatsappNumber: string })[] = [];
+  if (student.mobileNumber) phoneFilters.push({ mobileNumber: student.mobileNumber });
+  if (student.whatsappNumber) phoneFilters.push({ whatsappNumber: student.whatsappNumber });
+
+  if (phoneFilters.length > 0) {
+    const duplicate = await prisma.examEnrollment.findFirst({
+      where: {
+        examFormId: exam.id,
+        studentId: { not: student.id },
+        OR: phoneFilters,
+        student: {
+          examSessions: {
+            some: {
+              examFormId: exam.id,
+              status: { in: ["submitted", "auto_submitted"] },
+            },
+          },
+        },
+      },
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        { error: "This mobile number has already been used to submit this exam" },
+        { status: 409 }
+      );
+    }
+  }
+
   // Check for existing session
   const existing = await prisma.examSession.findUnique({
     where: { examFormId_studentId: { examFormId: exam.id, studentId: student.id } },
