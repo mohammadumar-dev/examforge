@@ -62,6 +62,63 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   if (session.status === "in_progress")
     return NextResponse.json({ error: "Exam not yet submitted" }, { status: 400 });
 
+  // Fetch per-section breakdown
+  const sectionResponses = await prisma.examResponse.findMany({
+    where: { sessionId },
+    select: {
+      isCorrect: true,
+      isSkipped: true,
+      marksAwarded: true,
+      question: {
+        select: {
+          marks: true,
+          section: { select: { id: true, name: true, orderIndex: true } },
+        },
+      },
+    },
+  });
+
+  interface SectionStat {
+    name: string;
+    orderIndex: number;
+    score: number;
+    totalMarks: number;
+    correct: number;
+    total: number;
+    skipped: number;
+  }
+  const hasSections = sectionResponses.some((r) => r.question.section !== null);
+  const sectionStats: SectionStat[] = [];
+
+  if (hasSections) {
+    const map = new Map<string, SectionStat>();
+    for (const r of sectionResponses) {
+      const sec = r.question.section;
+      const key = sec?.id ?? "__none__";
+      if (!map.has(key)) {
+        map.set(key, {
+          name: sec?.name ?? "General",
+          orderIndex: sec?.orderIndex ?? 9999,
+          score: 0,
+          totalMarks: 0,
+          correct: 0,
+          total: 0,
+          skipped: 0,
+        });
+      }
+      const entry = map.get(key)!;
+      entry.total += 1;
+      entry.totalMarks += Number(r.question.marks);
+      if (r.isSkipped) {
+        entry.skipped += 1;
+      } else if (r.isCorrect) {
+        entry.correct += 1;
+        entry.score += Number(r.marksAwarded ?? 0);
+      }
+    }
+    sectionStats.push(...[...map.values()].sort((a, b) => a.orderIndex - b.orderIndex));
+  }
+
   const passed      = !!session.isPassed;
   const pct         = Number(session.percentage ?? 0);
   const score       = Number(session.score ?? 0);
@@ -87,7 +144,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
   // App name (top-left)
   doc.fontSize(11).fillColor(C.indigoLight).font("Helvetica")
-     .text("EXAMFORGE", margin, 28, { characterSpacing: 2 });
+     .text("HI TECH EXAMINATION", margin, 28, { characterSpacing: 2 });
 
   // "Result Certificate" badge (top-right)
   const badgeText = "Result Certificate";
@@ -205,8 +262,51 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
        });
   });
 
-  // ── 5. Footer ────────────────────────────────────────────────────────────────
-  const footerTop = tableTop + rowH * (rows.length + 1) + 24;
+  // ── 5. Section-wise breakdown table (only when exam has sections) ────────────
+  let sectionTableBottom = tableTop + rowH * (rows.length + 1);
+
+  if (sectionStats.length > 0) {
+    const secTableTop = sectionTableBottom + 32;
+    const secRowH = 32;
+    const col1W = contentW * 0.4;
+    const col2W = contentW * 0.2;
+    const col3W = contentW * 0.2;
+    const col4W = contentW - col1W - col2W - col3W;
+
+    // Section table header
+    doc.rect(margin, secTableTop, contentW, secRowH).fill(C.indigoDark);
+    doc.fontSize(10).fillColor(C.white).font("Helvetica-Bold")
+       .text("Section-wise Breakdown", margin + 16, secTableTop + 10, { width: col1W });
+    doc.fontSize(9).fillColor(C.indigoLight).font("Helvetica")
+       .text("Score", margin + col1W, secTableTop + 11, { width: col2W, align: "center" });
+    doc.fontSize(9).fillColor(C.indigoLight).font("Helvetica")
+       .text("Correct", margin + col1W + col2W, secTableTop + 11, { width: col3W, align: "center" });
+    doc.fontSize(9).fillColor(C.indigoLight).font("Helvetica")
+       .text("%", margin + col1W + col2W + col3W, secTableTop + 11, { width: col4W, align: "center" });
+
+    sectionStats.forEach((s, i) => {
+      const y = secTableTop + secRowH + i * secRowH;
+      const bg = i % 2 === 0 ? C.white : C.bg;
+      const pct = s.totalMarks > 0 ? ((s.score / s.totalMarks) * 100).toFixed(1) : "0.0";
+
+      doc.rect(margin, y, contentW, secRowH).fill(bg);
+      doc.rect(margin, y, contentW, secRowH).stroke(C.border);
+
+      doc.fontSize(10).fillColor(C.dark).font("Helvetica-Bold")
+         .text(s.name, margin + 16, y + 10, { width: col1W - 16 });
+      doc.fontSize(10).fillColor(C.dark).font("Helvetica")
+         .text(`${s.score} / ${s.totalMarks}`, margin + col1W, y + 10, { width: col2W, align: "center" });
+      doc.fontSize(10).fillColor(C.green).font("Helvetica-Bold")
+         .text(`${s.correct} / ${s.total}`, margin + col1W + col2W, y + 10, { width: col3W, align: "center" });
+      doc.fontSize(10).fillColor(C.dark).font("Helvetica-Bold")
+         .text(`${pct}%`, margin + col1W + col2W + col3W, y + 10, { width: col4W, align: "center" });
+    });
+
+    sectionTableBottom = secTableTop + secRowH * (sectionStats.length + 1);
+  }
+
+  // ── 6. Footer ────────────────────────────────────────────────────────────────
+  const footerTop = sectionTableBottom + 24;
 
   doc.moveTo(margin, footerTop).lineTo(W - margin, footerTop)
      .strokeColor(C.border).lineWidth(1).stroke();
