@@ -66,6 +66,7 @@ export function POST(req: NextRequest, ctx: RouteContext) {
         orderIndex,
         explanation: body.explanation,
         isRequired: body.isRequired,
+        sectionId: body.sectionId ?? null,
         options: {
           create: body.options.map((o) => ({
             optionText: o.optionText,

@@ -15,6 +15,7 @@ export function GET(req: NextRequest, ctx: RouteContext) {
     const exam = await prisma.examForm.findFirst({
       where: { id },
       include: {
+        sections: { orderBy: { orderIndex: "asc" } },
         questions: {
           orderBy: { orderIndex: "asc" },
           include: { options: { orderBy: { orderIndex: "asc" } } },
