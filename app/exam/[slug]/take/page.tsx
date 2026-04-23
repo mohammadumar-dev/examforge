@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, startTransition } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, startTransition } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ExamTimer } from "@/components/exam/ExamTimer";
 import { FullscreenGuard } from "@/components/exam/FullscreenGuard";
@@ -20,6 +20,15 @@ interface Question {
   marks: number;
   orderIndex: number;
   options: Option[];
+  sectionId?: string | null;
+  sectionName?: string | null;
+}
+
+interface ExamSection {
+  id: string | null;
+  name: string | null;
+  orderIndex: number;
+  questions: Question[];
 }
 
 export default function ExamTakingPage() {
@@ -66,7 +75,15 @@ export default function ExamTakingPage() {
           setError(data.error);
           return;
         }
-        setQuestions(data.questions ?? []);
+        // Flatten sections into a single questions array with sectionName attached
+        if (data.sections) {
+          const flat: Question[] = (data.sections as ExamSection[]).flatMap((s) =>
+            s.questions.map((q) => ({ ...q, sectionId: s.id, sectionName: s.name }))
+          );
+          setQuestions(flat);
+        } else {
+          setQuestions(data.questions ?? []);
+        }
         setSavedAnswers(data.savedAnswers ?? {});
         if (data.remainingSeconds !== null && data.remainingSeconds !== undefined) {
           setRemainingSeconds(Math.floor(data.remainingSeconds));
@@ -181,6 +198,24 @@ export default function ExamTakingPage() {
     (q) => !savedAnswers[q.id] || savedAnswers[q.id].length === 0
   ).length;
 
+  // Group questions by section for the navigation grid — recomputed only when questions change
+  const sectionGroups = useMemo(() => {
+    const groups: Array<{ name: string | null; indices: number[] }> = [];
+    for (let i = 0; i < questions.length; i++) {
+      const name = questions[i].sectionName ?? null;
+      const last = groups[groups.length - 1];
+      if (last && last.name === name) {
+        last.indices.push(i);
+      } else {
+        groups.push({ name, indices: [i] });
+      }
+    }
+    return groups;
+  }, [questions]);
+
+  const hasSections = sectionGroups.some((g) => g.name !== null);
+  const currentSection = questions[currentIndex]?.sectionName ?? null;
+
   if (sessionInvalidated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -248,22 +283,39 @@ export default function ExamTakingPage() {
               Q{currentIndex + 1} / {questions.length}
             </span>
 
-            {/* Question number grid */}
-            <div className="hidden sm:flex gap-1 flex-wrap max-w-xs">
-              {questions.map((q, i) => (
-                <button
-                  key={q.id}
-                  onClick={() => setCurrentIndex(i)}
-                  className={`w-6 h-6 rounded text-xs font-semibold transition-colors ${
-                    i === currentIndex
-                      ? "bg-primary text-primary-foreground"
-                      : savedAnswers[q.id]?.length > 0
-                      ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                      : "bg-muted text-muted-foreground hover:bg-accent"
-                  }`}
-                >
-                  {i + 1}
-                </button>
+            {/* Question number grid — grouped by section */}
+            <div className="hidden sm:flex flex-wrap gap-x-3 gap-y-1 max-w-sm">
+              {sectionGroups.map((group, gi) => (
+                <div key={gi} className="flex items-center gap-1">
+                  {hasSections && (
+                    <span
+                      className="text-xs font-semibold text-muted-foreground shrink-0 max-w-[72px] truncate"
+                      title={group.name ?? "General"}
+                    >
+                      {group.name ?? "General"}:
+                    </span>
+                  )}
+                  <div className="flex gap-0.5 flex-wrap">
+                    {group.indices.map((i) => {
+                      const q = questions[i];
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => setCurrentIndex(i)}
+                          className={`w-6 h-6 rounded text-xs font-semibold transition-colors ${
+                            i === currentIndex
+                              ? "bg-primary text-primary-foreground"
+                              : savedAnswers[q.id]?.length > 0
+                              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                              : "bg-muted text-muted-foreground hover:bg-accent"
+                          }`}
+                        >
+                          {i + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -272,6 +324,13 @@ export default function ExamTakingPage() {
             <ExamTimer totalSeconds={remainingSeconds} onExpire={submitExam} />
           )}
         </div>
+
+        {currentSection && (
+          <div className="mx-4 mt-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20 text-sm font-semibold text-primary">
+            <span className="w-1.5 h-4 rounded-full bg-primary shrink-0" />
+            {currentSection}
+          </div>
+        )}
 
         {/* Question area */}
         {currentQuestion && (
