@@ -40,10 +40,32 @@ export function PATCH(req: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ error: "Invalid input", details: err }, { status: 400 });
     }
 
+    const updateData: Record<string, unknown> = {};
+    if (body.accessType !== undefined) updateData.accessType = body.accessType;
+    if ("registrationStartAt" in body) {
+      updateData.registrationStartAt = body.registrationStartAt
+        ? new Date(body.registrationStartAt)
+        : null;
+    }
+    if ("registrationEndAt" in body) {
+      updateData.registrationEndAt = body.registrationEndAt
+        ? new Date(body.registrationEndAt)
+        : null;
+    }
+
     const rule = await prisma.examAccessRule.upsert({
       where: { examFormId: examId },
-      update: { accessType: body.accessType },
-      create: { examFormId: examId, accessType: body.accessType },
+      update: updateData,
+      create: {
+        examFormId: examId,
+        accessType: body.accessType ?? "specific_emails",
+        ...(updateData.registrationStartAt !== undefined && {
+          registrationStartAt: updateData.registrationStartAt as Date | null,
+        }),
+        ...(updateData.registrationEndAt !== undefined && {
+          registrationEndAt: updateData.registrationEndAt as Date | null,
+        }),
+      },
     });
 
     await invalidateExamCaches(examId, exam.slug);
