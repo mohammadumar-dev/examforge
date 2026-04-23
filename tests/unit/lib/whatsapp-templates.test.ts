@@ -14,7 +14,7 @@ const base = {
 describe("buildExamRegistrationTemplate", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_APP_URL = "https://exam.example.com";
-    process.env.NEXT_PUBLIC_ORG_NAME = "ExamForge";
+    process.env.NEXT_PUBLIC_ORG_NAME = "HI Tech Examination";
   });
 
   it("returns exactly 6 template variables", () => {
@@ -26,7 +26,7 @@ describe("buildExamRegistrationTemplate", () => {
     const { templateVariables } = buildExamRegistrationTemplate(base);
     expect(templateVariables[0]).toBe("Rahul Sharma");                           // {{1}} name
     expect(templateVariables[1]).toBe("UPSC Mock Test 1");                       // {{2}} title
-    expect(templateVariables[2]).toBe("ExamForge");                              // {{3}} org
+    expect(templateVariables[2]).toBe("HI Tech Examination");                              // {{3}} org
     expect(templateVariables[3]).toContain("https://exam.example.com/exam/upsc-mock-1"); // {{4}} url
   });
 
@@ -68,7 +68,7 @@ describe("buildExamRegistrationTemplate", () => {
 
   it("body contains the org name", () => {
     const { body } = buildExamRegistrationTemplate(base);
-    expect(body).toContain("ExamForge");
+    expect(body).toContain("HI Tech Examination");
   });
 
   it("body contains student name greeting", () => {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# ExamForge — Full Docker Load Test Runner
+# HI Tech Examination — Full Docker Load Test Runner
 # Usage: bash docker/load-test/run.sh [smoke|load|2k|stress|spike]
 # Default scenario: 2k (2000 concurrent students)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ COMPOSE="docker compose -f docker/load-test/docker-compose.yml"
 cd "$(git rev-parse --show-toplevel)"
 
 echo "═══════════════════════════════════════════════════════"
-echo "  ExamForge Load Test  |  Scenario: ${SCENARIO}"
+echo "  HI Tech Examination Load Test  |  Scenario: ${SCENARIO}"
 echo "═══════════════════════════════════════════════════════"
 
 # ── Step 1: Build & start infrastructure + app ────────────────────────────

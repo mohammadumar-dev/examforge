@@ -75,7 +75,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   // ─── Build PDF ──────────────────────────────────────────────────────────────
   const doc = new PDFDocument({ size: "A4", margin: 0, info: {
     Title: `${session.examForm.title} — Result`,
-    Author: "ExamForge",
+    Author: "HI Tech Examination",
   }});
 
   const W = 595; // A4 width in points
@@ -213,7 +213,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
 
   doc.fontSize(8).fillColor(C.muted).font("Helvetica")
      .text(
-       "This is an automatically generated result document issued by ExamForge.",
+       "This is an automatically generated result document issued by HI Tech Examination.",
        margin, footerTop + 12, { width: contentW, align: "center" }
      );
 

@@ -19,7 +19,7 @@ The Prisma client is generated to `lib/generated/prisma/` (not the default locat
 
 ## Architecture
 
-ExamForge is a self-hosted MCQ exam platform. **Admins** manage exams through a protected dashboard; **students** take exams via shareable links without accounts.
+HI Tech Examination is a self-hosted MCQ exam platform. **Admins** manage exams through a protected dashboard; **students** take exams via shareable links without accounts.
 
 ### Two distinct user roles
 

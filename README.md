@@ -1,4 +1,4 @@
-# ExamForge
+# HI Tech Examination
 
 > A self-hosted, secure MCQ examination platform built with Next.js 16, PostgreSQL, and Prisma ORM.
 
@@ -8,9 +8,9 @@
 [![Prisma](https://img.shields.io/badge/Prisma-7-2D3748)](https://www.prisma.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC)](https://tailwindcss.com/)
 
-**ExamForge** enables administrators to create, manage, and conduct secure MCQ examinations with access control, time limits, full-screen enforcement, and email notifications — all self-hosted. Unlike Google Forms, it is purpose-built for examinations.
+**HI Tech Examination** enables administrators to create, manage, and conduct secure MCQ examinations with access control, time limits, full-screen enforcement, and email notifications — all self-hosted. Unlike Google Forms, it is purpose-built for examinations.
 
-![ExamForge Hero](https://placehold.co/1200x400/1a1a2e/ffffff?text=ExamForge+Banner)
+![HI Tech Examination Hero](https://placehold.co/1200x400/1a1a2e/ffffff?text=HI Tech Examination+Banner)
 
 ---
 

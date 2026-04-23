@@ -141,7 +141,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     body: msgBody,
     templateVariables,
     attributes: {
-      Source: "ExamForge",
+      Source: "HI Tech Examination",
       Exam: exam.title,
       Email: email,
     },

@@ -148,7 +148,7 @@ async function runScoring(
           campaignName: process.env.SANDESHAI_EXAM_RESULT_CAMPAIGN_NAME ?? "Exam Result",
           body: examResultWhatsappMessage({ studentName, examTitle: exam.title, score: totalScore, totalMarks, percentage, isPassed, resultUrl: resultPageUrl }),
           templateVariables: [studentName, exam.title, String(totalScore), String(totalMarks), percentage.toFixed(1), isPassed ? "PASSED" : "FAILED", resultPageUrl],
-          attributes: { Source: "ExamForge", Exam: exam.title, Result: isPassed ? "PASSED" : "FAILED" },
+          attributes: { Source: "HI Tech Examination", Exam: exam.title, Result: isPassed ? "PASSED" : "FAILED" },
           recipientType: "student",
           recipientId: student.id,
           notificationType: "student_exam_result",

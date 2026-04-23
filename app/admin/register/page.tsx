@@ -20,7 +20,7 @@ function RegisterContent() {
             <GraduationCap className="w-6 h-6 text-primary-foreground" />
           </div>
           <div className="text-center">
-            <p className="text-xl font-bold text-foreground">ExamForge</p>
+            <p className="text-xl font-bold text-foreground">HI Tech Examination</p>
             <p className="text-sm text-muted-foreground">Admin</p>
           </div>
         </div>

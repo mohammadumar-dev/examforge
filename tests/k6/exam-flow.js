@@ -1,5 +1,5 @@
 /**
- * ExamForge k6 Load Test — Full Student Exam Journey
+ * HI Tech Examination k6 Load Test — Full Student Exam Journey
  *
  * Scenarios (select via SCENARIO env var):
  *   smoke  — 5 VUs, 2 min   (verify nothing is broken)

@@ -7,7 +7,7 @@ EXAM_SLUG="${EXAM_SLUG:-load-test-exam}"
 BASE_URL="${BASE_URL:-http://localhost:3000}"
 
 echo "════════════════════════════════════════════"
-echo " ExamForge Load Test"
+echo " HI Tech Examination Load Test"
 echo " Scenario : $SCENARIO"
 echo " Target   : $BASE_URL"
 echo " Exam     : $EXAM_SLUG"

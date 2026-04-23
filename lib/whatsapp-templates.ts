@@ -6,7 +6,7 @@
  *
  * {{1}} = Student Name
  * {{2}} = Exam Title
- * {{3}} = Organization name (e.g. "ExamForge")
+ * {{3}} = Organization name (e.g. "HI Tech Examination")
  * {{4}} = Full exam URL (e.g. https://yourdomain.com/exam/slug)
  * {{5}} = Scheduled Start Date/Time
  * {{6}} = Duration in minutes (number only, e.g. "90")
@@ -29,7 +29,7 @@ export function buildExamRegistrationTemplate(args: ExamRegistrationTemplateArgs
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const params = new URLSearchParams({ email: args.studentEmail, pwd: args.examPassword });
   const examUrl = `${appUrl}/exam/${args.examSlug}?${params.toString()}`;
-  const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "ExamForge";
+  const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "HI Tech Examination";
 
   const start = args.scheduledStartAt
     ? new Date(args.scheduledStartAt).toLocaleString("en-IN", {

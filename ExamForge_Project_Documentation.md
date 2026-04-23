@@ -1,4 +1,4 @@
-# ExamForge — Examination Platform
+# HI Tech Examination — Examination Platform
 ### Full-Stack Project Documentation
 > **Stack:** Next.js 14 (App Router) · PostgreSQL · Prisma ORM · Shadcn UI · SMTP (Nodemailer)
 > **Version:** MVP 1.0 | **Last Updated:** April 2026
@@ -24,7 +24,7 @@
 
 ## 1. Project Overview
 
-**ExamForge** is a self-hosted, exam-oriented form platform built for administrators who need to conduct secure, shareable, and access-controlled MCQ examinations. Unlike Google Forms, ExamForge is built specifically for examinations with:
+**HI Tech Examination** is a self-hosted, exam-oriented form platform built for administrators who need to conduct secure, shareable, and access-controlled MCQ examinations. Unlike Google Forms, HI Tech Examination is built specifically for examinations with:
 
 - One-time exam sessions per student email
 - Full-screen enforcement with exit prevention
@@ -562,7 +562,7 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=your@gmail.com
 SMTP_PASS=app_password_here
-SMTP_FROM="ExamForge <your@gmail.com>"
+SMTP_FROM="HI Tech Examination <your@gmail.com>"
 ```
 
 ### Notification Triggers
@@ -688,7 +688,7 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=you@gmail.com
 SMTP_PASS=your_app_password
-SMTP_FROM="ExamForge <you@gmail.com>"
+SMTP_FROM="HI Tech Examination <you@gmail.com>"
 
 # Seeding (first super_admin)
 SEED_ADMIN_EMAIL=admin@yourdomain.com
@@ -978,4 +978,4 @@ Use sessionStorage to store session_token (never localStorage).
 
 ---
 
-*End of Document — ExamForge MVP v1.0*
+*End of Document — HI Tech Examination MVP v1.0*

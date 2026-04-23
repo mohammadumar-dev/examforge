@@ -1,10 +1,10 @@
-# ExamForge — QWEN.md
+# HI Tech Examination — QWEN.md
 
 ## Project Overview
 
-**ExamForge** is a self-hosted, exam-oriented form platform built with **Next.js 16** (App Router). It enables administrators to create, manage, and conduct secure MCQ examinations with access control, time limits, full-screen enforcement, and email notifications via SMTP.
+**HI Tech Examination** is a self-hosted, exam-oriented form platform built with **Next.js 16** (App Router). It enables administrators to create, manage, and conduct secure MCQ examinations with access control, time limits, full-screen enforcement, and email notifications via SMTP.
 
-Unlike Google Forms, ExamForge is purpose-built for examinations with:
+Unlike Google Forms, HI Tech Examination is purpose-built for examinations with:
 - One-time exam sessions per student (Gmail-based, no registration required)
 - Full-screen enforcement with exit prevention
 - Time limits with auto-submission

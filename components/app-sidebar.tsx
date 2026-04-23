@@ -48,7 +48,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               size="lg"
               asChild
-              tooltip="ExamForge"
+              tooltip="HI Tech Examination"
               className="hover:bg-sidebar-accent/60 rounded-lg transition-colors"
             >
               <a href="/admin/dashboard/exams">
@@ -56,7 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <GraduationCap className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0 leading-none">
-                  <span className="text-sm font-semibold tracking-tight">ExamForge</span>
+                  <span className="text-sm font-semibold tracking-tight">HI Tech Examination</span>
                   <span className="text-[11px] text-sidebar-foreground/50 font-normal">Admin Panel</span>
                 </div>
               </a>

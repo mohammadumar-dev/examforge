@@ -18,7 +18,7 @@ Thank you for using our service!
 --- VARIABLE MAPPING ---
 {{1}} = Student Name          (e.g. "Mohammad Umar")
 {{2}} = Exam Title            (e.g. "SSC CGL Mock Test 1")
-{{3}} = Organization Name     (e.g. "ExamForge") — set via NEXT_PUBLIC_ORG_NAME env var
+{{3}} = Organization Name     (e.g. "HI Tech Examination") — set via NEXT_PUBLIC_ORG_NAME env var
 {{4}} = Full Exam URL         (e.g. "https://yourdomain.com/exam/ssc-cgl-mock-1")
 {{5}} = Start Date & Time     (e.g. "18 Apr 2026, 10:00 am") or "As per schedule"
 {{6}} = Duration in minutes   (number only, e.g. "90") — defaults to "60" if not set

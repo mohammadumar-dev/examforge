@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# ExamForge — Progressive Load Test: 100 → 500 → 2000 VUs
+# HI Tech Examination — Progressive Load Test: 100 → 500 → 2000 VUs
 # Usage: bash docker/load-test/run-progressive.sh
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail

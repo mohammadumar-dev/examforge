@@ -97,7 +97,7 @@ services:
       CACHE_DEFAULT_TTL_SECONDS:   "300"
       # WhatsApp OFF — paid API, load test only
       WHATSAPP_ENABLED:            "false"
-      NEXT_PUBLIC_ORG_NAME:        ExamForge
+      NEXT_PUBLIC_ORG_NAME:        HI Tech Examination
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
       interval: 10s

@@ -23,13 +23,13 @@ export const metadata: Metadata = {
   authors: [{ name: "DataInn" }],
   creator: "DataInn",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://exams.datainnovation.co.in"
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://exam.hitecheducationindia.com"
   ),
   openGraph: {
     title: "HiTech Exams – DataInn",
     description:
       "Conduct secure online MCQ exams with real-time proctoring, instant results, and WhatsApp notifications.",
-    url: process.env.NEXT_PUBLIC_APP_URL ?? "https://exams.datainnovation.co.in",
+    url: process.env.NEXT_PUBLIC_APP_URL ?? "https://exam.hitecheducationindia.com",
     siteName: "HiTech Exams",
     locale: "en_IN",
     type: "website",

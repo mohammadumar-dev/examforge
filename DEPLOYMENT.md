@@ -1,4 +1,4 @@
-# ExamForge — Complete Deployment Guide
+# HI Tech Examination — Complete Deployment Guide
 
 > **Target:** 5000+ concurrent students · Single exam window (1–2 hours) · Self-hosted server · Local PostgreSQL + PgBouncer + Redis
 
@@ -177,7 +177,7 @@ With Redis (60s TTL), 167 reads/second → **< 3 reads/second** (only on cache m
 
 ### 2.4 Next.js — The Application
 
-ExamForge runs on Next.js 16 (App Router) in Node.js runtime.
+HI Tech Examination runs on Next.js 16 (App Router) in Node.js runtime.
 
 **Key files:**
 - `app/api/exam/[slug]/` — Student-facing API routes (rate-limited, session-validated)
