@@ -3,9 +3,16 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Link2, Mail, Plus, Send, Trash2, Users } from "lucide-react";
+import { AlertCircle, CalendarClock, CheckCircle2, Link2, Mail, Plus, Save, Send, Trash2, Users } from "lucide-react";
+
+function toDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 interface AllowedEmail {
   id: string;
@@ -25,9 +32,12 @@ export function AccessControl({ examId, isPublished }: AccessControlProps) {
   const [bulkEmails, setBulkEmails] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingWindow, setSavingWindow] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [registrationStartAt, setRegistrationStartAt] = useState("");
+  const [registrationEndAt, setRegistrationEndAt] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -37,6 +47,12 @@ export function AccessControl({ examId, isPublished }: AccessControlProps) {
       .then(([{ rule }, { emails }]) => {
         setAccessType(rule?.accessType ?? "specific_emails");
         setEmails(emails ?? []);
+        if (rule?.registrationStartAt) {
+          setRegistrationStartAt(toDatetimeLocal(rule.registrationStartAt));
+        }
+        if (rule?.registrationEndAt) {
+          setRegistrationEndAt(toDatetimeLocal(rule.registrationEndAt));
+        }
       })
       .finally(() => setLoading(false));
   }, [examId]);
@@ -56,6 +72,25 @@ export function AccessControl({ examId, isPublished }: AccessControlProps) {
       setError("Failed to update access type");
     }
     setSaving(false);
+  }
+
+  async function saveRegistrationWindow() {
+    setSavingWindow(true);
+    setMessage("");
+    setError("");
+    const res = await apiFetch(`/api/admin/exams/${examId}/access`, {
+      method: "PATCH",
+      json: {
+        registrationStartAt: registrationStartAt ? new Date(registrationStartAt).toISOString() : null,
+        registrationEndAt: registrationEndAt ? new Date(registrationEndAt).toISOString() : null,
+      },
+    });
+    if (res.ok) {
+      setMessage("Registration window saved");
+    } else {
+      setError("Failed to save registration window");
+    }
+    setSavingWindow(false);
   }
 
   async function addEmails() {
@@ -188,6 +223,59 @@ export function AccessControl({ examId, isPublished }: AccessControlProps) {
               </p>
             </div>
           </button>
+        </div>
+      </div>
+
+      {/* Registration window */}
+      <div className="bg-card border rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <CalendarClock size={15} className="text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-foreground">Registration Window</h3>
+        </div>
+        <p className="text-xs text-muted-foreground -mt-1">
+          Restrict when students can register. Leave blank to allow registration whenever the exam is published.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Opens at</label>
+            <Input
+              type="datetime-local"
+              value={registrationStartAt}
+              onChange={(e) => setRegistrationStartAt(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Closes at</label>
+            <Input
+              type="datetime-local"
+              value={registrationEndAt}
+              onChange={(e) => setRegistrationEndAt(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={saveRegistrationWindow}
+            disabled={savingWindow}
+          >
+            <Save size={13} className="mr-1.5" />
+            {savingWindow ? "Saving…" : "Save Window"}
+          </Button>
+          {(registrationStartAt || registrationEndAt) && (
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              onClick={() => {
+                setRegistrationStartAt("");
+                setRegistrationEndAt("");
+              }}
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
