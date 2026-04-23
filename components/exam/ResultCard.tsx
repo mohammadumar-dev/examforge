@@ -3,6 +3,17 @@
 import { CheckCircle, XCircle, Clock, Trophy, Target, Lightbulb, Check, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+export interface SectionBreakdownItem {
+  sectionId: string | null;
+  sectionName: string | null;
+  orderIndex: number;
+  score: number;
+  totalMarks: number;
+  correct: number;
+  total: number;
+  skipped: number;
+}
+
 export interface ResultData {
   sessionId: string;
   status: string;
@@ -15,6 +26,7 @@ export interface ResultData {
   resultShareToken?: string | null;
   student: { email: string; name: string | null };
   responses?: ResponseData[];
+  sectionBreakdown?: SectionBreakdownItem[];
 }
 
 interface ResponseData {
@@ -111,6 +123,46 @@ export function ResultCard({ result, examTitle, slug, pdfToken }: { result: Resu
           )}
         </div>
       </div>
+
+      {/* Section-wise breakdown */}
+      {result.sectionBreakdown && result.sectionBreakdown.length > 0 && (
+        <div className="max-w-2xl mx-auto px-4 py-8">
+          <h2 className="text-lg font-bold mb-4">Section-wise Breakdown</h2>
+          <div className="rounded-xl border overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/60 text-muted-foreground text-xs uppercase tracking-wide">
+                  <th className="text-left px-4 py-3 font-semibold">Section</th>
+                  <th className="text-center px-4 py-3 font-semibold">Score</th>
+                  <th className="text-center px-4 py-3 font-semibold">Correct</th>
+                  <th className="text-center px-4 py-3 font-semibold">Skipped</th>
+                  <th className="text-right px-4 py-3 font-semibold">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.sectionBreakdown.map((s, i) => {
+                  const pct = s.totalMarks > 0 ? ((s.score / s.totalMarks) * 100).toFixed(1) : "0.0";
+                  return (
+                    <tr key={s.sectionId ?? i} className={i % 2 === 0 ? "bg-card" : "bg-muted/30"}>
+                      <td className="px-4 py-3 font-medium">{s.sectionName ?? "General"}</td>
+                      <td className="px-4 py-3 text-center tabular-nums">
+                        {s.score} / {s.totalMarks}
+                      </td>
+                      <td className="px-4 py-3 text-center tabular-nums text-emerald-600 font-medium">
+                        {s.correct} / {s.total}
+                      </td>
+                      <td className="px-4 py-3 text-center tabular-nums text-muted-foreground">
+                        {s.skipped}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums font-semibold">{pct}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Answer review */}
       {result.responses && result.responses.length > 0 && (
