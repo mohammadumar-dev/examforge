@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withAdminAuth } from "@/lib/withAdminAuth";
+import { invalidateExamCaches } from "@/lib/examCacheInvalidation";
 import { reorderQuestionsSchema } from "@/lib/validators/examSchemas";
 import { z } from "zod";
 
@@ -33,16 +34,13 @@ export function PATCH(req: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ error: "Invalid question IDs" }, { status: 400 });
     }
 
-    // Update order indices
     await prisma.$transaction(
       body.questionIds.map((id, index) =>
-        prisma.examQuestion.update({
-          where: { id },
-          data: { orderIndex: index },
-        })
+        prisma.examQuestion.update({ where: { id }, data: { orderIndex: index } })
       )
     );
 
+    await invalidateExamCaches(examId);
     return NextResponse.json({ message: "Questions reordered" });
   })(req, ctx);
 }

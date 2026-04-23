@@ -12,6 +12,7 @@ interface ParsedRow {
   questionText: string;
   options: string[];
   correctIndex: number;
+  sectionName: string;
   rowNumber: number;
 }
 
@@ -55,6 +56,7 @@ function parseSheet(buffer: ArrayBuffer, filename: string): { rows: ParsedRow[];
     // Accept "B) ENERGY", "B) ...", "B.", "B" — extract the leading letter
     const correctFull = col(r, "Correct Answer", "correct", "answer", "correct option", "ans").toUpperCase();
     const correctRaw = correctFull.match(/^([A-D])/)?.[1] ?? "";
+    const sectionName = col(r, "Section", "section name", "subject");
 
     if (!questionText) {
       errors.push(`Row ${rowNumber}: Question text is empty`);
@@ -73,6 +75,7 @@ function parseSheet(buffer: ArrayBuffer, filename: string): { rows: ParsedRow[];
       questionText,
       options: [optA, optB, optC, optD],
       correctIndex: CORRECT_ANSWER_MAP[correctRaw],
+      sectionName,
       rowNumber,
     });
   });
@@ -94,6 +97,15 @@ export function POST(req: NextRequest, ctx: RouteContext) {
     const file = formData.get("file");
     if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+    }
+
+    const sectionIdRaw = formData.get("sectionId");
+    const sectionId = typeof sectionIdRaw === "string" && sectionIdRaw ? sectionIdRaw : null;
+
+    // Validate sectionId belongs to this exam if provided
+    if (sectionId) {
+      const section = await prisma.examSection.findFirst({ where: { id: sectionId, examFormId: examId } });
+      if (!section) return NextResponse.json({ error: "Section not found" }, { status: 404 });
     }
 
     const filename = typeof file === "object" && "name" in file ? (file as File).name : "file.csv";
@@ -118,6 +130,36 @@ export function POST(req: NextRequest, ctx: RouteContext) {
       );
     }
 
+    // Resolve section names from rows → section IDs, auto-creating missing sections
+    const uniqueSectionNames = [...new Set(rows.map((r) => r.sectionName).filter(Boolean))];
+    const sectionNameToId = new Map<string, string>();
+
+    if (uniqueSectionNames.length > 0) {
+      const existingSections = await prisma.examSection.findMany({
+        where: { examFormId: examId },
+        select: { id: true, name: true, orderIndex: true },
+      });
+
+      const lastOrderIndex = existingSections.reduce((max, s) => Math.max(max, s.orderIndex), -1);
+
+      for (const s of existingSections) {
+        sectionNameToId.set(s.name.toLowerCase(), s.id);
+      }
+
+      // Create sections that don't exist yet
+      const toCreate = uniqueSectionNames.filter((n) => !sectionNameToId.has(n.toLowerCase()));
+      for (let i = 0; i < toCreate.length; i++) {
+        const newSection = await prisma.examSection.create({
+          data: {
+            examFormId: examId,
+            name: toCreate[i],
+            orderIndex: lastOrderIndex + 1 + i,
+          },
+        });
+        sectionNameToId.set(toCreate[i].toLowerCase(), newSection.id);
+      }
+    }
+
     // Get starting orderIndex
     const lastQuestion = await prisma.examQuestion.findFirst({
       where: { examFormId: examId },
@@ -125,6 +167,12 @@ export function POST(req: NextRequest, ctx: RouteContext) {
       select: { orderIndex: true },
     });
     const baseIndex = (lastQuestion?.orderIndex ?? -1) + 1;
+
+    // Resolve each row's sectionId: row Section column → fallback to form sectionId
+    const resolvedSectionIds = rows.map((row) => {
+      if (row.sectionName) return sectionNameToId.get(row.sectionName.toLowerCase()) ?? sectionId;
+      return sectionId;
+    });
 
     const created = await prisma.$transaction(
       rows.map((row, i) =>
@@ -135,6 +183,7 @@ export function POST(req: NextRequest, ctx: RouteContext) {
             questionType: "single_choice",
             marks: 1,
             orderIndex: baseIndex + i,
+            sectionId: resolvedSectionIds[i] ?? null,
             options: {
               create: row.options.map((text, oi) => ({
                 optionText: text,
