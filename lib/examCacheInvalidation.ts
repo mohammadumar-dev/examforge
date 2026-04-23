@@ -9,6 +9,7 @@ export async function invalidateExamCaches(examFormId: string, slug?: string): P
   const keys: string[] = [
     CacheKeys.examById(examFormId),
     CacheKeys.questions(examFormId),
+    CacheKeys.sections(examFormId),
     CacheKeys.access(examFormId),
   ]
   if (slug) keys.push(CacheKeys.examBySlug(slug))

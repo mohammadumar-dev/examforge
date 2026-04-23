@@ -4,6 +4,7 @@ export const CacheKeys = {
   examBySlug: (slug: string) => `ef:exam:${slug}`,
   examById: (id: string) => `ef:exam:id:${id}`,
   questions: (examFormId: string) => `ef:questions:${examFormId}`,
+  sections: (examFormId: string) => `ef:sections:${examFormId}`,
   access: (examFormId: string) => `ef:access:${examFormId}`,
   hbTab: (sessionId: string) => `ef:hb:${sessionId}:tab`,
   hbFs: (sessionId: string) => `ef:hb:${sessionId}:fs`,
