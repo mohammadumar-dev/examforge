@@ -307,11 +307,13 @@ model ExamQuestionOption {
 // ============================================================
 
 model ExamAccessRule {
-  id          String     @id @default(uuid())
-  examFormId  String     @unique @map("exam_form_id")
-  accessType  AccessType @default(specific_emails) @map("access_type")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  id                  String     @id @default(uuid())
+  examFormId          String     @unique @map("exam_form_id")
+  accessType          AccessType @default(specific_emails) @map("access_type")
+  registrationStartAt DateTime?  @map("registration_start_at")
+  registrationEndAt   DateTime?  @map("registration_end_at")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
 
   examForm ExamForm @relation(fields: [examFormId], references: [id], onDelete: Cascade)
 
