@@ -83,7 +83,7 @@ export default function ExamDetailPage({
     typeof window !== "undefined"
       ? window.location.origin
       : process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const examLink = exam ? `${appUrl}/exam/${exam.slug}` : "";
+  const examLink = exam ? `${appUrl}/exam/${exam.slug}/register` : "";
 
   useEffect(() => {
     apiFetch(`/api/admin/exams/${id}`)
