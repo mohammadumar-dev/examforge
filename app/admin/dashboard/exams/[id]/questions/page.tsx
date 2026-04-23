@@ -15,6 +15,8 @@ export default function QuestionsPage({
   const { id } = use(params);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [questions, setQuestions] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [sections, setSections] = useState<any[]>([]);
   const [examTitle, setExamTitle] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -24,6 +26,7 @@ export default function QuestionsPage({
       .then(({ exam }) => {
         setExamTitle(exam.title);
         setQuestions(exam.questions ?? []);
+        setSections(exam.sections ?? []);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -60,7 +63,13 @@ export default function QuestionsPage({
           ))}
         </div>
       ) : (
-        <QuestionEditor examId={id} questions={questions} onUpdate={setQuestions} />
+        <QuestionEditor
+          examId={id}
+          questions={questions}
+          sections={sections}
+          onUpdate={setQuestions}
+          onSectionsUpdate={setSections}
+        />
       )}
     </div>
   );
