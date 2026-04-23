@@ -1,7 +1,9 @@
 import { z } from "zod";
 
 export const updateAccessRuleSchema = z.object({
-  accessType: z.enum(["public_link", "specific_emails"]),
+  accessType: z.enum(["public_link", "specific_emails"]).optional(),
+  registrationStartAt: z.string().datetime({ local: true }).nullable().optional(),
+  registrationEndAt: z.string().datetime({ local: true }).nullable().optional(),
 });
 
 export const addEmailsSchema = z.object({
