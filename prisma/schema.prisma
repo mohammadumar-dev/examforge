@@ -221,6 +221,7 @@ model ExamForm {
   admin Admin @relation(fields: [adminId], references: [id])
 
   questions          ExamQuestion[]
+  sections           ExamSection[]
   accessRule         ExamAccessRule?
   allowedEmails      ExamAllowedEmail[]
   enrollments        ExamEnrollment[]
@@ -241,6 +242,7 @@ model ExamForm {
 model ExamQuestion {
   id           String       @id @default(uuid())
   examFormId   String       @map("exam_form_id")
+  sectionId    String?      @map("section_id")
   questionText String       @map("question_text")
   questionType QuestionType @default(single_choice) @map("question_type")
   marks        Decimal      @default(1) @db.Decimal(5, 2)
@@ -250,13 +252,35 @@ model ExamQuestion {
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
-  examForm ExamForm @relation(fields: [examFormId], references: [id], onDelete: Cascade)
-  options  ExamQuestionOption[]
+  examForm ExamForm      @relation(fields: [examFormId], references: [id], onDelete: Cascade)
+  section  ExamSection?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  options   ExamQuestionOption[]
   responses ExamResponse[]
 
   @@unique([examFormId, orderIndex])
   @@index([examFormId])
+  @@index([sectionId])
   @@map("exam_questions")
+}
+
+// ============================================================
+// EXAM SECTIONS
+// ============================================================
+
+model ExamSection {
+  id          String   @id @default(uuid())
+  examFormId  String   @map("exam_form_id")
+  name        String   @db.VarChar(255)
+  description String?
+  orderIndex  Int      @default(0) @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  examForm  ExamForm       @relation(fields: [examFormId], references: [id], onDelete: Cascade)
+  questions ExamQuestion[]
+
+  @@index([examFormId])
+  @@map("exam_sections")
 }
 
 // ============================================================
