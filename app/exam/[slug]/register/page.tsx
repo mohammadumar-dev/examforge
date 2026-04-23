@@ -26,7 +26,13 @@ export default async function ExamRegisterPage({ params }: Props) {
       showResultImmediately: true,
       isPublished: true,
       status: true,
-      accessRule: { select: { accessType: true } },
+      accessRule: {
+        select: {
+          accessType: true,
+          registrationStartAt: true,
+          registrationEndAt: true,
+        },
+      },
       _count: { select: { questions: true } },
     },
   });
@@ -61,6 +67,32 @@ export default async function ExamRegisterPage({ params }: Props) {
         <div className="text-center space-y-2">
           <p className="text-2xl font-bold">Exam Not Available</p>
           <p className="text-muted-foreground">This exam has ended.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const regStart = exam.accessRule?.registrationStartAt;
+  const regEnd = exam.accessRule?.registrationEndAt;
+
+  if (regStart && new Date(regStart) > now) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center space-y-2">
+          <p className="text-2xl font-bold">Registration Not Open Yet</p>
+          <p className="text-muted-foreground">Registration opens at:</p>
+          <p className="text-sm font-medium">{new Date(regStart).toLocaleString()}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (regEnd && new Date(regEnd) < now) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-center space-y-2">
+          <p className="text-2xl font-bold">Registration Closed</p>
+          <p className="text-muted-foreground">The registration period for this exam has ended.</p>
         </div>
       </div>
     );
