@@ -22,6 +22,7 @@ export const createQuestionSchema = z.object({
   marks: z.number().positive().default(1),
   explanation: z.string().optional(),
   isRequired: z.boolean().default(true),
+  sectionId: z.string().uuid().optional().nullable(),
   options: z
     .array(
       z.object({
@@ -38,4 +39,15 @@ export const updateQuestionSchema = createQuestionSchema.partial();
 
 export const reorderQuestionsSchema = z.object({
   questionIds: z.array(z.string().uuid()),
+});
+
+export const createSectionSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+});
+
+export const updateSectionSchema = createSectionSchema.partial();
+
+export const reorderSectionsSchema = z.object({
+  sectionIds: z.array(z.string().uuid()),
 });
