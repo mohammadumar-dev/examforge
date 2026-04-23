@@ -45,6 +45,17 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: "Exam not found or not available" }, { status: 404 });
   }
 
+  const now = new Date();
+  const regStart = exam.accessRule?.registrationStartAt;
+  const regEnd = exam.accessRule?.registrationEndAt;
+
+  if (regStart && new Date(regStart) > now) {
+    return NextResponse.json({ error: "Registration has not opened yet" }, { status: 403 });
+  }
+  if (regEnd && new Date(regEnd) < now) {
+    return NextResponse.json({ error: "Registration is closed" }, { status: 403 });
+  }
+
   if (exam.accessRule?.accessType === "specific_emails") {
     const accessKey = `${CacheKeys.access(exam.id)}:email:${email}`;
     const allowed = await cacheWrap(accessKey, 300, () =>
