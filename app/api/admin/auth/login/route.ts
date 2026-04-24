@@ -75,9 +75,10 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const isLocalhost = req.headers.get("host")?.startsWith("localhost") ?? false;
   response.cookies.set("refresh_token", rawRefresh, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" && !isLocalhost,
     sameSite: "strict",
     path: "/",
     maxAge: REFRESH_TOKEN_TTL_MS / 1000,

@@ -49,9 +49,10 @@ export async function POST(req: NextRequest) {
   const accessToken = signAccessToken(stored.adminId);
 
   const response = NextResponse.json({ accessToken });
+  const isLocalhost = req.headers.get("host")?.startsWith("localhost") ?? false;
   response.cookies.set("refresh_token", newRawRefresh, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" && !isLocalhost,
     sameSite: "strict",
     path: "/",
     maxAge: REFRESH_TOKEN_TTL_MS / 1000,
