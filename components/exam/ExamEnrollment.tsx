@@ -14,7 +14,9 @@ import {
   BookOpen,
   Star,
   Clock,
+  CalendarClock,
 } from "lucide-react";
+import { LocalTime } from "@/components/LocalTime";
 
 interface ExamInfo {
   id: string;
@@ -23,6 +25,7 @@ interface ExamInfo {
   description: string | null;
   instructions: string | null;
   timeLimitMinutes: number | null;
+  scheduledStartAt: Date | string | null;
   totalMarks: number;
   _count: { questions: number };
   accessRule: { accessType: string } | null;
@@ -37,6 +40,9 @@ export function ExamEnrollment({ exam }: { exam: ExamInfo }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const examNotStarted =
+    exam.scheduledStartAt && new Date(exam.scheduledStartAt) > new Date();
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -108,6 +114,12 @@ export function ExamEnrollment({ exam }: { exam: ExamInfo }) {
               <Clock size={11} className="text-primary" />
               {exam.timeLimitMinutes ? `${exam.timeLimitMinutes} min` : "No time limit"}
             </span>
+            {exam.scheduledStartAt && (
+              <span className="inline-flex items-center gap-1.5 bg-background border rounded-full px-3 py-1 text-xs font-medium">
+                <CalendarClock size={11} className="text-primary" />
+                Starts: <LocalTime iso={new Date(exam.scheduledStartAt).toISOString()} />
+              </span>
+            )}
           </div>
         </div>
 
@@ -123,14 +135,25 @@ export function ExamEnrollment({ exam }: { exam: ExamInfo }) {
                 <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
                   {success}
                 </p>
+                {examNotStarted && exam.scheduledStartAt && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    The exam starts on{" "}
+                    <span className="font-medium text-foreground">
+                      <LocalTime iso={new Date(exam.scheduledStartAt).toISOString()} />
+                    </span>
+                    . Come back then with your exam password.
+                  </p>
+                )}
               </div>
-              <Button
-                className="w-full mt-2"
-                size="lg"
-                onClick={() => router.push(`/exam/${exam.slug}`)}
-              >
-                Start Exam
-              </Button>
+              {!examNotStarted && (
+                <Button
+                  className="w-full mt-2"
+                  size="lg"
+                  onClick={() => router.push(`/exam/${exam.slug}`)}
+                >
+                  Start Exam
+                </Button>
+              )}
             </div>
           </div>
         ) : (

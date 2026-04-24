@@ -50,18 +50,6 @@ export default async function ExamRegisterPage({ params }: Props) {
   }
 
   const now = new Date();
-  if (exam.scheduledStartAt && new Date(exam.scheduledStartAt) > now) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="text-center space-y-2">
-          <p className="text-2xl font-bold">Exam Not Available</p>
-          <p className="text-muted-foreground">Exam has not started yet.</p>
-          <p className="text-sm">Starts at: <LocalTime iso={exam.scheduledStartAt.toISOString()} /></p>
-        </div>
-      </div>
-    );
-  }
-
   if (exam.scheduledEndAt && new Date(exam.scheduledEndAt) < now) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
