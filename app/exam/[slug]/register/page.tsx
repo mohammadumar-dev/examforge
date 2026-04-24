@@ -1,4 +1,5 @@
 import { ExamEnrollment } from "@/components/exam/ExamEnrollment";
+import { LocalTime } from "@/components/LocalTime";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export default async function ExamRegisterPage({ params }: Props) {
         <div className="text-center space-y-2">
           <p className="text-2xl font-bold">Exam Not Available</p>
           <p className="text-muted-foreground">Exam has not started yet.</p>
-          <p className="text-sm">Starts at: {new Date(exam.scheduledStartAt).toLocaleString()}</p>
+          <p className="text-sm">Starts at: <LocalTime iso={exam.scheduledStartAt.toISOString()} /></p>
         </div>
       </div>
     );
@@ -81,7 +82,7 @@ export default async function ExamRegisterPage({ params }: Props) {
         <div className="text-center space-y-2">
           <p className="text-2xl font-bold">Registration Not Open Yet</p>
           <p className="text-muted-foreground">Registration opens at:</p>
-          <p className="text-sm font-medium">{new Date(regStart).toLocaleString()}</p>
+          <p className="text-sm font-medium"><LocalTime iso={new Date(regStart).toISOString()} /></p>
         </div>
       </div>
     );
