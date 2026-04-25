@@ -92,11 +92,6 @@ export function ExamEnrollment({ exam }: { exam: ExamInfo }) {
             <div className="min-w-0">
               <h1 className="text-xl font-bold tracking-tight leading-snug">{exam.title}</h1>
               <p className="text-sm text-muted-foreground mt-1">Register to take this exam</p>
-              {exam.description && (
-                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  {exam.description}
-                </p>
-              )}
             </div>
           </div>
 
@@ -121,6 +116,32 @@ export function ExamEnrollment({ exam }: { exam: ExamInfo }) {
               </span>
             )}
           </div>
+
+          {/* Description & Instructions */}
+          {(exam.description || exam.instructions) && (
+            <div className="mt-5 space-y-3">
+              {exam.description && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1">
+                    About this Exam
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {exam.description}
+                  </p>
+                </div>
+              )}
+              {exam.instructions && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-1">
+                    Instructions
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {exam.instructions}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Success state */}
