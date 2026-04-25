@@ -16,6 +16,29 @@ export const createExamSchema = z.object({
 
 export const updateExamSchema = createExamSchema.partial();
 
+export const updateExamDetailsSchema = z
+  .object({
+    title: z.string().min(3).max(255),
+    description: z.string().nullable(),
+    instructions: z.string().nullable(),
+    scheduledStartAt: z.string().datetime({ local: true }).nullable(),
+    scheduledEndAt: z.string().datetime({ local: true }).nullable(),
+    timeLimitMinutes: z.number().int().positive().nullable(),
+  })
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  })
+  .refine(
+    (data) => {
+      if (data.scheduledStartAt && data.scheduledEndAt) {
+        return new Date(data.scheduledEndAt) > new Date(data.scheduledStartAt);
+      }
+      return true;
+    },
+    { message: "scheduledEndAt must be after scheduledStartAt", path: ["scheduledEndAt"] }
+  );
+
 export const createQuestionSchema = z.object({
   questionText: z.string().min(1),
   questionType: z.enum(["single_choice", "multiple_choice"]).default("single_choice"),
