@@ -13,6 +13,7 @@ import {
   Users,
   FileQuestion,
   Shield,
+  ListChecks,
   Copy,
   Check,
   ExternalLink,
@@ -79,6 +80,12 @@ const navLinks = (id: string) => [
     label: "Submissions",
     description: "View student results and analytics",
     icon: Users,
+  },
+  {
+    href: `/admin/dashboard/exams/enrollment?examId=${id}`,
+    label: "Enrollments",
+    description: "View all students enrolled in this exam",
+    icon: ListChecks,
   },
 ];
 
@@ -223,8 +230,8 @@ export default function ExamDetailPage({
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
@@ -442,7 +449,7 @@ export default function ExamDetailPage({
       </div>
 
       {/* Navigation cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {navLinks(id).map(({ href, label, description, icon: Icon }) => (
           <Link
             key={href}

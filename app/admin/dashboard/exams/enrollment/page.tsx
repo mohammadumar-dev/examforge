@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/apiClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,7 +64,7 @@ interface ShareToken {
   expiresAt: string;
   revokedAt: string | null;
   createdAt: string;
-  token?: string; // only present immediately after creation
+  token?: string;
 }
 
 const sessionStatusConfig: Record<string, string> = {
@@ -92,7 +93,10 @@ function isExpiredOrRevoked(t: ShareToken) {
   return t.revokedAt !== null || new Date(t.expiresAt) < new Date();
 }
 
-export default function EnrollmentPage() {
+function EnrollmentContent() {
+  const searchParams = useSearchParams();
+  const examId = searchParams.get("examId");
+
   const [sessions, setSessions] = useState<EnrollmentSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -113,12 +117,18 @@ export default function EnrollmentPage() {
       : process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   useEffect(() => {
-    apiFetch("/api/admin/enrollments?limit=200")
+    setLoading(true);
+    setError("");
+    const url = examId
+      ? `/api/admin/enrollments?examId=${examId}&limit=200`
+      : "/api/admin/enrollments?limit=200";
+
+    apiFetch(url)
       .then((r) => r.json())
       .then(({ sessions }) => setSessions(sessions ?? []))
       .catch(() => setError("Failed to load enrollments"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [examId]);
 
   const loadTokens = useCallback(() => {
     setTokensLoading(true);
@@ -174,20 +184,30 @@ export default function EnrollmentPage() {
   const activeTokens = tokens.filter((t) => !isExpiredOrRevoked(t));
   const inactiveTokens = tokens.filter((t) => isExpiredOrRevoked(t));
 
+  // Derive exam title from sessions when in single-exam mode
+  const examTitle = examId && sessions.length > 0 ? sessions[0].examForm.title : null;
+
+  const backHref = examId
+    ? `/admin/dashboard/exams/${examId}`
+    : "/admin/dashboard/exams";
+  const backLabel = examId ? "Back to Exam" : "Back to Exams";
+
   return (
     <div className="flex flex-col flex-1 p-6 gap-6">
       {/* Header */}
       <div>
         <Link
-          href="/admin/dashboard/exams"
+          href={backHref}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2"
         >
           <ArrowLeft className="size-4" />
-          Back to Exams
+          {backLabel}
         </Link>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">Enrollments</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {examId ? "Exam Enrollments" : "Enrollments"}
+            </h1>
             {!loading && (
               <span className="text-xs font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
                 {sessions.length} student{sessions.length !== 1 ? "s" : ""}
@@ -200,7 +220,11 @@ export default function EnrollmentPage() {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          All students enrolled across all exams
+          {examId
+            ? examTitle
+              ? `Students enrolled in "${examTitle}"`
+              : "Students enrolled in this exam"
+            : "All students enrolled across all exams"}
         </p>
       </div>
 
@@ -220,7 +244,9 @@ export default function EnrollmentPage() {
           <div>
             <p className="font-semibold text-sm">Student Enrollments</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Complete enrollment details across all exams
+              {examId
+                ? "Enrollment details for this exam"
+                : "Complete enrollment details across all exams"}
             </p>
           </div>
         </div>
@@ -242,7 +268,7 @@ export default function EnrollmentPage() {
                 <TableHead className="pl-5">Student</TableHead>
                 <TableHead>Mobile</TableHead>
                 <TableHead>WhatsApp</TableHead>
-                <TableHead>Exam</TableHead>
+                {!examId && <TableHead>Exam</TableHead>}
                 <TableHead>Status</TableHead>
                 <TableHead>Score</TableHead>
                 <TableHead>Result</TableHead>
@@ -285,14 +311,16 @@ export default function EnrollmentPage() {
                       <span className="text-sm text-muted-foreground">—</span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/admin/dashboard/exams/${s.examForm.id}`}
-                      className="text-sm font-medium hover:underline underline-offset-4"
-                    >
-                      {s.examForm.title}
-                    </Link>
-                  </TableCell>
+                  {!examId && (
+                    <TableCell>
+                      <Link
+                        href={`/admin/dashboard/exams/${s.examForm.id}`}
+                        className="text-sm font-medium hover:underline underline-offset-4"
+                      >
+                        {s.examForm.title}
+                      </Link>
+                    </TableCell>
+                  )}
                   <TableCell>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${sessionStatusConfig[s.status] ?? ""}`}
@@ -350,7 +378,6 @@ export default function EnrollmentPage() {
             {newToken?.token && (
               <>
                 <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-4 space-y-3">
-                  {/* Success header */}
                   <div className="flex items-center gap-2.5">
                     <div className="size-6 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
                       <Check className="size-3.5 text-white" />
@@ -360,14 +387,12 @@ export default function EnrollmentPage() {
                     </p>
                   </div>
 
-                  {/* URL box — break-all prevents any overflow */}
                   <div className="bg-white dark:bg-black/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3">
                     <p className="text-xs font-mono break-all leading-relaxed text-emerald-900 dark:text-emerald-100 select-all">
                       {appUrl}/shared/enrollment?token={newToken.token}
                     </p>
                   </div>
 
-                  {/* Expiry + copy row */}
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1 shrink-0">
                       <Clock className="size-3" />
@@ -498,5 +523,13 @@ export default function EnrollmentPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function EnrollmentPage() {
+  return (
+    <Suspense>
+      <EnrollmentContent />
+    </Suspense>
   );
 }
