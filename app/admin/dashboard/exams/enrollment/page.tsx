@@ -177,7 +177,9 @@ function EnrollmentContent() {
   }
 
   async function copyLink(token: string) {
-    const url = `${appUrl}/shared/enrollment?token=${token}`;
+    const url = examId
+      ? `${appUrl}/shared/enrollment?token=${token}&examId=${examId}`
+      : `${appUrl}/shared/enrollment?token=${token}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -396,7 +398,7 @@ function EnrollmentContent() {
 
                   <div className="bg-white dark:bg-black/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3">
                     <p className="text-xs font-mono break-all leading-relaxed text-emerald-900 dark:text-emerald-100 select-all">
-                      {appUrl}/shared/enrollment?token={newToken.token}
+                      {appUrl}/shared/enrollment?token={newToken.token}{examId ? `&examId=${examId}` : ""}
                     </p>
                   </div>
 
