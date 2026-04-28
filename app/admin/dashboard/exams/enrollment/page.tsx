@@ -40,8 +40,9 @@ import {
 
 interface EnrollmentSession {
   id: string;
+  registeredAt: string;
   status: string;
-  startedAt: string;
+  startedAt: string | null;
   submittedAt: string | null;
   timeTakenSeconds: number | null;
   score: string | null;
@@ -68,6 +69,7 @@ interface ShareToken {
 }
 
 const sessionStatusConfig: Record<string, string> = {
+  registered: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
   in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   submitted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   auto_submitted: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -350,7 +352,12 @@ function EnrollmentContent() {
                     {formatTimeTaken(s.timeTakenSeconds)}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {new Date(s.startedAt).toLocaleString()}
+                    {s.startedAt
+                      ? new Date(s.startedAt).toLocaleString()
+                      : new Date(s.registeredAt).toLocaleString()}
+                    {!s.startedAt && (
+                      <span className="block text-muted-foreground/50">registered</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
