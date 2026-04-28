@@ -13,13 +13,18 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { FileSpreadsheet, GraduationCap, Settings, ShieldCheck } from "lucide-react"
+import { FileSpreadsheet, GraduationCap, ListChecks, Settings, ShieldCheck } from "lucide-react"
 
 const navItems = [
   {
     title: "Exams",
     url: "/admin/dashboard/exams",
     icon: FileSpreadsheet,
+  },
+  {
+    title: "Enrollments",
+    url: "/admin/dashboard/exams/enrollment",
+    icon: ListChecks,
   },
   {
     title: "Admins",
