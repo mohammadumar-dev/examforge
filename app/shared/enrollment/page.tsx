@@ -15,8 +15,9 @@ import { Phone, MessageCircle, Clock, ListChecks, ShieldAlert } from "lucide-rea
 
 interface EnrollmentSession {
   id: string;
+  registeredAt: string;
   status: string;
-  startedAt: string;
+  startedAt: string | null;
   timeTakenSeconds: number | null;
   score: string | null;
   totalMarks: string | null;
@@ -32,6 +33,7 @@ interface EnrollmentSession {
 }
 
 const sessionStatusConfig: Record<string, string> = {
+  registered: "bg-gray-100 text-gray-600",
   in_progress: "bg-blue-100 text-blue-700",
   submitted: "bg-emerald-100 text-emerald-700",
   auto_submitted: "bg-amber-100 text-amber-700",
@@ -56,6 +58,7 @@ function daysLeft(expiresAt: string): string {
 function EnrollmentView() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const examId = searchParams.get("examId");
 
   const [sessions, setSessions] = useState<EnrollmentSession[]>([]);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
@@ -70,7 +73,11 @@ function EnrollmentView() {
       return;
     }
 
-    fetch(`/api/shared/enrollment?token=${encodeURIComponent(token)}`)
+    const url = examId
+      ? `/api/shared/enrollment?token=${encodeURIComponent(token)}&examId=${examId}`
+      : `/api/shared/enrollment?token=${encodeURIComponent(token)}`;
+
+    fetch(url)
       .then(async (r) => {
         const data = await r.json();
         if (!r.ok) throw new Error(data.error ?? "Access denied");
@@ -80,7 +87,7 @@ function EnrollmentView() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, examId]);
 
   if (loading) {
     return (
@@ -117,7 +124,11 @@ function EnrollmentView() {
               {label ? label : "Student Enrollments"} — Read-only view
             </p>
             <p className="text-xs text-gray-500">
-              All students enrolled across all exams
+              {examId
+                ? sessions.length > 0
+                  ? `Students enrolled in "${sessions[0].examForm.title}"`
+                  : "Students enrolled in this exam"
+                : "All students enrolled across all exams"}
             </p>
           </div>
         </div>
@@ -143,7 +154,7 @@ function EnrollmentView() {
                   <TableHead className="pl-5">Student</TableHead>
                   <TableHead>Mobile</TableHead>
                   <TableHead>WhatsApp</TableHead>
-                  <TableHead>Exam</TableHead>
+                  {!examId && <TableHead>Exam</TableHead>}
                   <TableHead>Status</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Result</TableHead>
@@ -188,9 +199,11 @@ function EnrollmentView() {
                         <span className="text-sm text-gray-400">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {s.examForm.title}
-                    </TableCell>
+                    {!examId && (
+                      <TableCell className="text-sm font-medium">
+                        {s.examForm.title}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${sessionStatusConfig[s.status] ?? ""}`}
@@ -220,7 +233,12 @@ function EnrollmentView() {
                       {formatTimeTaken(s.timeTakenSeconds)}
                     </TableCell>
                     <TableCell className="text-xs text-gray-500">
-                      {new Date(s.startedAt).toLocaleString()}
+                      {s.startedAt
+                        ? new Date(s.startedAt).toLocaleString()
+                        : new Date(s.registeredAt).toLocaleString()}
+                      {!s.startedAt && (
+                        <span className="block text-gray-400">registered</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
